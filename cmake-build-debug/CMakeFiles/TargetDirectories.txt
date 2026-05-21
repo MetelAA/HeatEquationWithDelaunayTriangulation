@@ -1,0 +1,3 @@
+D:/projects/clionProjects/HeatEquationWithDelaunayTriangulation/cmake-build-debug/CMakeFiles/HeatEquationWithDelaunayTriangulation.dir
+D:/projects/clionProjects/HeatEquationWithDelaunayTriangulation/cmake-build-debug/CMakeFiles/edit_cache.dir
+D:/projects/clionProjects/HeatEquationWithDelaunayTriangulation/cmake-build-debug/CMakeFiles/rebuild_cache.dir
