@@ -1,0 +1,20 @@
+#ifndef HEATEQUATIONWITHDELAUNAYTRIANGULATION_DELAUNAYTRIANGULATION_H
+#define HEATEQUATIONWITHDELAUNAYTRIANGULATION_DELAUNAYTRIANGULATION_H
+
+#include "DCEL.h"
+#include "DelaunayTree.h"
+
+class DelaunayTriangulation{
+public:
+
+private:
+    void validateEdge();
+
+
+    DCEL dcel;
+    DelaunayTree tree;
+
+
+};
+
+#endif //HEATEQUATIONWITHDELAUNAYTRIANGULATION_DELAUNAYTRIANGULATION_H

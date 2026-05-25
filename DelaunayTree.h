@@ -1,103 +1,135 @@
-//
-// Created by Artem on 21.05.2026.
-//
-
 #ifndef HEATEQUATIONWITHDELAUNAYTRIANGULATION_DELAUNAYTREE_H
 #define HEATEQUATIONWITHDELAUNAYTRIANGULATION_DELAUNAYTREE_H
 
+#include <stdexcept>
 #include <memory>
 #include "DCEL.h"
 #include "vector_stuff.h"
 
-class DelaunayTree {
-public:
-    struct location_data;
+class DelaunayTree{
 
-    DelaunayTree(size_t pointsCount) {
-        this->nodes.reserve(pointsCount + 1); // важно! - чтобы не было висячих указателей в векторе children в Internal
+public:
+    DelaunayTree() {
+
+        nodes_.reserve();//зарезервировать места под все точки что будут, иначе указатели в Internal поедут
     }
 
-    void insert(size_t node_index, DCEL<>::FaceWrapper face); // я так и не понял, почему мы вставляем не точку а что мы тут вообще вставляем????????
-
-    void insert(size_t first_node_index, size_t second_node_index, DCEL<>::FaceWrapper face);
-
-    location_data locate(Point_2 &p);
-
-    struct location_data {
-        DCEL<>::FaceWrapper face;
-        DCEL<>::EdgeWrapper edge;
+    struct point_location{ //куда попала точка которую мы пытаемся вставить, всегда FaceWrapper (грань) и если попали то EdgeWrapper (ребро на которое попали)
+        DCEL::FaceWrapper face;
+        std::optional<DCEL::EdgeWrapper> edge;
+        point_location(const DCEL::FaceWrapper &face, const std::optional<DCEL::EdgeWrapper> &edge) : face(face), edge(edge) {}
     };
 
-protected:
-    class Node {
+    point_location locate(const Point_2& point){
+        std::optional<point_location> loc;
+        const Node* cur = nodes_.at(0).get();
+        while (cur) {
+            cur = cur->locate(point, loc);
+        }
+        if (!loc.has_value()) throw std::runtime_error("Undefined behavior, point location failed!!!!");
+        return *loc;
+    }
+
+    std::vector<size_t> insert(DCEL::VertexWrapper p_r, std::vector<DCEL::FaceWrapper>& newFaces, std::vector<size_t>& old_leafs_indexes); //если в old_leafs_indexes 1 индекс и в newFaces - 3 грани, значит попали внутрь грани,
+    //если в old_leafs_indexes 2 индекса и в newFaces - 4 грани, значит попали на грань в этом случае нужно очень аккуратно работать с новыми гранями, отследить где чьи дети, т.к. incident_faces выдаст грани
+    //в случайном порядке
+    //кароч, вектор old_leafs_indexes заполняется так: если попали внутрь грани - face.getNodeIndex() если edge - не null, то из этого edga достаём обе face, т.е. не используем face которая в point_location (тк чтобы лишний раз не искать где что)
+    //и вытаскиваем обе грани из этого ребра! ПРИ ЭТОМ ДЕЛАЕМ ЭТО ДО SPLIT_FACE т.к. есть шанс что после него на метсах куда указывает face_index из враппера будет лежать уже новая face у которой это поле не заполнено вовсе
+    //а возвращает вектор - индексы node к которым привязаны newFaces, т.е. после этого метода нужно в цикле вызывать dcel.update_face_node_index() c соответствующими facesWrappers и элементами результируюзего массива
+    //newFaces[0] соотвествует [0] из вектора результата метода (нда....)
+
+
+private:
+    class Node{
     public:
-        Node(const DCEL<>::VertexWrapper &v1, const DCEL<>::VertexWrapper &v2, const DCEL<>::VertexWrapper &v3,
-             size_t index_in_nodes_vector) :
-                v1(v1), v2(v2), v3(v3), index_in_nodes_vector(index_in_nodes_vector) {
+        Node(const DCEL::VertexWrapper &v1, const DCEL::VertexWrapper &v2, const DCEL::VertexWrapper &v3) : v1(
+                v1), v2(v2), v3(v3) {
             //сделаем проверку на правильность ориентации ребер (обход против часовой)
             if (vector_s::vector_orientation(v1.getGeometry(), v2.getGeometry(), v3.getGeometry()) !=
                 vector_s::orientation::left)
-                throw "orientation of triangle bypass must be left!";
+                throw std::runtime_error("orientation of triangle bypass must be left!");
+
         }
+        virtual Node const* locate(Point_2 const& p, std::optional<point_location>& location) const = 0;
 
-        const DCEL<>::VertexWrapper &getV1() const { return v1; }
+        const DCEL::VertexWrapper &getV1() const {return v1;}
 
-        const DCEL<>::VertexWrapper &getV2() const { return v2; }
+        const DCEL::VertexWrapper &getV2() const {return v2;}
 
-        const DCEL<>::VertexWrapper &getV3() const { return v3; }
+        const DCEL::VertexWrapper &getV3() const {return v3;}
 
-        virtual Node const *locate(Point_2 &p,
-                                   std::unique_ptr<location_data>& locationData) const = 0; // p - исходная точка откуда запускается поиск, не забыть создать DTO struct чтобы передать отсюда важные данные, а не оставить функцию void
-
-
-    private:
-        DCEL<>::VertexWrapper v1, v2, v3; //обход треугольника против часовой
-        size_t index_in_nodes_vector;
+    protected:
+        DCEL::VertexWrapper v1, v2, v3; //врапперы вершин образующих грань
     };
 
-    class Leaf : public Node {
+    class Internal : public Node{
     public:
-        Leaf(const DCEL<>::VertexWrapper &v1, const DCEL<>::VertexWrapper &v2, const DCEL<>::VertexWrapper &v3,
-             size_t indexInNodesVector, const DCEL<>::FaceWrapper &currentFace) : Node(v1, v2, v3, indexInNodesVector),
-                                                                                  current_face(currentFace) {}
+        Internal(const DCEL::VertexWrapper &v1, const DCEL::VertexWrapper &v2, const DCEL::VertexWrapper &v3,
+                 const std::vector<const Node *> &children) : Node(v1, v2, v3), children(children) {}
 
-        Node const *locate(Point_2 &p, std::unique_ptr<location_data>& locationData) const override {
-            locationData = std::make_unique<location_data>(location_data{current_face, current_face.getEdgeInWrapper()});
-            return nullptr;
-        }
-
-    private:
-        DCEL<>::FaceWrapper current_face; //грань к которой относиться эта нода
-    };
-
-    class Internal : public Node {
-    public:
-        Internal(const DCEL<>::VertexWrapper &v1, const DCEL<>::VertexWrapper &v2, const DCEL<>::VertexWrapper &v3,
-                 size_t indexInNodesVector, std::vector<Node *> &children) : Node(v1, v2, v3, indexInNodesVector),
-                                                                             children(children) {}
-        Internal(const Node& node,
-                 size_t indexInNodesVector, std::vector<Node *> &children) : Node(node.getV1(), node.getV2(), node.getV3(), indexInNodesVector),
-                                                                             children(children) {}
-        Node const *locate(Point_2 &p, std::unique_ptr<location_data>& locationData) const override {
-            for (Node *child: children) {
-                if (vector_s::vector_orientation(child->getV1().getGeometry(), child->getV2().getGeometry(), p) != vector_s::orientation::right &&
-                        vector_s::vector_orientation(child->getV2().getGeometry(), child->getV3().getGeometry(), p) != vector_s::orientation::right &&
-                        vector_s::vector_orientation(child->getV3().getGeometry(), child->getV1().getGeometry(), p) != vector_s::orientation::right
-                ) {
+        Node const* locate(const Point_2 &p, std::optional<point_location>& location) const override {
+            for(const Node *child : children){
+                if(point_in_node(child->getV1().getGeometry(), child->getV2().getGeometry(), child->getV3().getGeometry(), p)){
                     return child;
                 }
             }
-            throw "something unexpected, we in internal node which not contains any children with out point inside";
+
+            throw std::runtime_error("Undefined behavior, we shouldn't went to the Internal Node with no children with our point inside!");
         }
 
-//        static double calculate_point_in_circle_determinant(const Point_2& p, const Point_2 q, const Point_2 r, const Point_2 s);
     private:
-        std::vector<Node *> children;
+        std::vector<Node const*> children;
+
+
+        static bool point_in_node(const Point_2& a, const Point_2& b, const Point_2& c, const Point_2& p) { //проверяет, находиться ли точка p внутри грани (треугольника) образованной тремя веришнами a, b, c
+            vector_s::orientation o1 = vector_s::vector_orientation(a, b, p);
+            vector_s::orientation o2 = vector_s::vector_orientation(b, c, p);
+            vector_s::orientation o3 = vector_s::vector_orientation(c, a, p);
+            return o1 != vector_s::orientation::right &&
+                   o2 != vector_s::orientation::right &&
+                   o3 != vector_s::orientation::right;
+        }
     };
 
-    std::vector<std::unique_ptr<Node>> nodes;
+    class Leaf : public Node{
+    public:
+        Leaf(const DCEL::VertexWrapper &v1, const DCEL::VertexWrapper &v2, const DCEL::VertexWrapper &v3,
+             const DCEL::FaceWrapper &face) : Node(v1, v2, v3), face(face) {}
+
+        Node const* locate(const Point_2 &p, std::optional<point_location>& location) const override {
+            Point_2 p1 = this->v1.getGeometry();
+            Point_2 p2 = this->v2.getGeometry();
+            Point_2 p3= this->v3.getGeometry();
+            if(vector_s::vector_orientation(p1, p2, p) == vector_s::orientation::collinear){ //ориетация против часовой (буду писать это везде иначе сам запутаюсь, хз почему в МФТИ лекция дана правая?)
+
+                location.emplace(face, findEdge(v1, v2));
+            }else if(vector_s::vector_orientation(p2, p3, p) == vector_s::orientation::collinear){
+                location.emplace(face, findEdge(v2, v3));
+            }else if(vector_s::vector_orientation(p3, p1, p) == vector_s::orientation::collinear){
+                location.emplace(face, findEdge(v3, v1));
+            }else {
+                location.emplace(face, std::nullopt);
+            }
+
+            return nullptr; //завершаем цикл в locate!
+        }
+    private:
+        DCEL::FaceWrapper face; //текущая существующая в DCEL грань
+
+        DCEL::EdgeWrapper findEdge(const DCEL::VertexWrapper& a, const DCEL::VertexWrapper& b) const {
+            DCEL::EdgeWrapper startEdgeInFace = face.getEdge();
+            DCEL::EdgeWrapper currentEdge = startEdgeInFace;
+            do {
+                if (currentEdge.getSourceVertex() == a && currentEdge.getNextEdge().getSourceVertex() == b)
+                    return currentEdge;
+                currentEdge = currentEdge.getNextEdge();
+            } while (!(currentEdge == startEdgeInFace));
+            throw std::runtime_error("collinear edge not found");
+        }
+
+    };
+
+    std::vector<std::unique_ptr<Node>> nodes_;
 };
-
-
 
 #endif //HEATEQUATIONWITHDELAUNAYTRIANGULATION_DELAUNAYTREE_H

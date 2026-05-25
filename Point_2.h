@@ -21,6 +21,10 @@ public:
         return a.x * b.y - a.y * b.x;
     }
 
+    static double scalar(const Point_2& a, const Point_2& b){
+        return a.x * b.x + a.y * b.y;
+    }
+
     double getX() const {
         return x;
     }
