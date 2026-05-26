@@ -3,16 +3,18 @@
 
 #include <stdexcept>
 #include <memory>
+#include <cmath>
 #include "DCEL.h"
 #include "vector_stuff.h"
-#include "DelaunayTriangulation.h"
 
 class DelaunayTree {
 public:
     DelaunayTree() {} //пришлось создать инчае гемор, используется один раз и тут же перезабивается нормальным
 
     DelaunayTree(DCEL::FaceWrapper& root_face, size_t points_count) {
-        nodes_.reserve(points_count+33);//зарезервировать места под все точки что будут, иначе указатели в Internal поедут
+        size_t log2n = static_cast<size_t>(std::ceil(std::log2(points_count)));
+
+        nodes_.reserve(10 * points_count * log2n + 64);//зарезервировать места под все точки что будут, иначе указатели в Internal поедут
 
         DCEL::EdgeWrapper e = root_face.getEdge();
         DCEL::VertexWrapper v0 = e.getSourceVertex();
@@ -63,6 +65,8 @@ private:
             }
         }
 
+        virtual ~Node() = default;
+
         virtual Node const *locate(Point_2 const &p, std::optional<point_location> &location) const = 0;
 
         const DCEL::VertexWrapper &getV1() const { return v1; }
@@ -81,9 +85,21 @@ private:
                  const std::vector<const Node *> &children) : Node(v1, v2, v3), children(children) {}
 
         Node const *locate(const Point_2 &p, std::optional<point_location> &location) const override {
-            for (const Node *child : children) {
-                if (point_in_node(child->getV1(), child->getV2(), child->getV3(), p)) {
-                    return child;
+            //возникает проблема что в триангуляции всегда продолжает присутствовать грань с двумя бесконечными вершинами, а для такого случая
+            //мы не умеем нормально определять попадание в грань, городить что-то на уровне одной бесокнечной вершины супер-треугольников (как в cg_lib) я не буду, задавать
+            //какие-то координаты для отрицательных вершин тоже считаю не правильным, оно точно где-нибудь поломается и я это никогда не отдебажу, поэтому,
+            //вместо простого перебора всех детей подряд, мы для каждого количества точек на бесконечности (от 0 до 2) перебираем детей и пропускаем СНАЧАЛА тех, у которых количество бесконечных вершин не равно 2.
+            //Ну типо сначала 0 бесконечных, потом 1 бесконечная, потом 2. В 99 проц случаев закончиться на первой итерации внешнего цикла!
+            for (int max_inf = 0; max_inf <= 2; ++max_inf) {
+                for (const Node *child : children) {
+                    int inf_count = child->getV1().is_infinite() +
+                                    child->getV2().is_infinite() +
+                                    child->getV3().is_infinite();
+                    if (inf_count != max_inf) continue;
+
+                    if (point_in_node(child->getV1(), child->getV2(), child->getV3(), p)) {
+                        return child;
+                    }
                 }
             }
 

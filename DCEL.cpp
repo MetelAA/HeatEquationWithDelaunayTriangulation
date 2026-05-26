@@ -1,7 +1,8 @@
 #include <stdexcept>
 #include "DCEL.h"
 
-DCEL::VertexWrapper DCEL::split_face(DCEL::FaceWrapper faceWithPointOn, std::optional<EdgeWrapper> edgeWithPointOn, Point_2 point) {
+DCEL::VertexWrapper
+DCEL::split_face(DCEL::FaceWrapper faceWithPointOn, std::optional<EdgeWrapper> edgeWithPointOn, Point_2 point) {
     if (edgeWithPointOn.has_value()) {
         //случай с попаданием на ребро
         edge e3 = this->edges[edgeWithPointOn.value().getCurrentEdgeIndex()]; //e3, e4 - ребра на котороые попала точка, ребра по которым разделяются face0, face1
@@ -307,10 +308,10 @@ std::vector<DCEL::FaceWrapper> DCEL::get_incident_faces(DCEL::VertexWrapper v) c
     std::vector<FaceWrapper> incident_faces;
     EdgeWrapper start = v.getEdge();
     EdgeWrapper iter = start;
-    do{
+    do {
         incident_faces.push_back(iter.getFace());
         iter = iter.getTwinEdge().getNextEdge();
-    }while(iter != start);
+    } while (iter != start);
     return incident_faces;
 }
 
@@ -320,10 +321,10 @@ std::vector<DCEL::EdgeWrapper> DCEL::get_outgoing_edges(DCEL::VertexWrapper v) c
     EdgeWrapper start = v.getEdge();
     EdgeWrapper iter = start;
 
-    do{
-        outgoing_edges.push_back(start);
+    do {
+        outgoing_edges.push_back(iter);
         iter = iter.getTwinEdge().getNextEdge();
-    }while(iter != start);
+    } while (iter != start);
     return outgoing_edges;
 }
 
@@ -331,24 +332,29 @@ void DCEL::update_face_node_index(DCEL::FaceWrapper face, size_t node_index) {
     this->faces[face.face_index].node_index = node_index;
 }
 
+
 DCEL::FaceWrapper DCEL::init_dcel_with_big_inf_triangle(const Point_2 &p0) {
     coords.push_back(p0);
 
-    size_t p_inf_bottom_index = 0, p_inf_top_index = 1, p_0_index = 2;
+    const size_t inf_left_top_index = 0;
+    const size_t inf_right_bottom_index = 1;
+    const size_t p0_index = 2;
 
-    vertexes.emplace_back(Constants::p_inf_right_bottom_index, 0);
-    vertexes.emplace_back(Constants::p_inf_left_top_index, 1);
-    vertexes.emplace_back(0, 2);
+    vertexes.emplace_back(Constants::p_inf_left_top_index, 0); // 0 индекс исходящего ребра из верхней левой веришны
+    vertexes.emplace_back(Constants::p_inf_right_bottom_index, 1); // 1 индекс исходящего ребра из правой нижней веришны
+    vertexes.emplace_back(0, 2); // 2 индекс исходящего ребра из первой реально вершины (точки)
 
-    size_t e0_index = 0, e1_index = 1, e2_index = 2;
-    edges.emplace_back(e1_index, e2_index, Constants::invalid_twin_edge, p_inf_bottom_index, 0);
-    edges.emplace_back(e2_index, e0_index, Constants::invalid_twin_edge, p_inf_top_index, 0);
-    edges.emplace_back(e0_index, e1_index, Constants::invalid_twin_edge, p_0_index, 0);
+    // создаём рёбра (обход: inf_left_top -> inf_right_bottom -> p0 -> inf_left_top)
+    const size_t e0_index = 0, e1_index = 1, e2_index = 2;
+
+    edges.emplace_back(e1_index, e2_index, Constants::invalid_twin_edge, inf_left_top_index, 0);
+    edges.emplace_back(e2_index, e0_index, Constants::invalid_twin_edge, inf_right_bottom_index, 0);
+    edges.emplace_back(e0_index, e1_index, Constants::invalid_twin_edge, p0_index, 0);
 
     faces.emplace_back(e0_index);
-    faces[0].node_index = 0; //делаем это здесь, чтобы не перекидывать в DelaunayTree DCEL что может путать
+    faces[0].node_index = 0;   // связь с корневым листом дерева (заранее чтобы потом не пробрасывать)
 
-    return FaceWrapper(0, this); //возвращаем корневую грань (первую), которая на двух бесконечных и одной конечной
+    return FaceWrapper(0, this);
 }
 
 
@@ -369,7 +375,7 @@ DCEL::EdgeWrapper DCEL::flip_edge(EdgeWrapper p_i_p_j_edge) {
     vertex p_r = this->vertexes[this->edges[e0.prev_edge_index].source_vertex_index]; // через предыдущее ребро
     vertex p_k = this->vertexes[this->edges[e3.prev_edge_index].source_vertex_index]; //в e3 входит ребро p_k p_j, у него source как раз и есть наша p_r
     size_t p_i_index = e0.source_vertex_index, p_j_index = this->edges[e0.next_edge_index].source_vertex_index,
-    p_r_index = this->edges[e0.prev_edge_index].source_vertex_index, p_k_index = this->edges[e3.prev_edge_index].source_vertex_index;
+            p_r_index = this->edges[e0.prev_edge_index].source_vertex_index, p_k_index = this->edges[e3.prev_edge_index].source_vertex_index;
 
     //доинициализируем все старые ребра
     edge e1 = this->edges[e0.next_edge_index];
@@ -451,6 +457,7 @@ DCEL::EdgeWrapper DCEL::flip_edge(EdgeWrapper p_i_p_j_edge) {
     this->vertexes[p_i_index].random_edge_index = e4_index;
     this->vertexes[p_j_index].random_edge_index = e1_index;
 
-    return EdgeWrapper(p_i_p_j_edge.edge_index, this); //он типо даже так то не поменялся, но для корректности лучше вернуть новый
+    return EdgeWrapper(p_i_p_j_edge.edge_index,
+                       this); //он типо даже так то не поменялся, но для корректности лучше вернуть новый
 }
 

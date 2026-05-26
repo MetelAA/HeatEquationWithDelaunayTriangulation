@@ -1,52 +1,66 @@
 #include "DelaunayTriangulation.h"
 
-void DelaunayTriangulation::validateEdge(DCEL::EdgeWrapper e) {
-    if (e.getSourceVertex().is_infinite() || e.getNextEdge().getSourceVertex().is_infinite()) return;
+void Triangulation::DelaunayTriangulation::validateEdge(DCEL::EdgeWrapper e) {
+    if (e.getSourceVertex().is_infinite() && e.getNextEdge().getSourceVertex().is_infinite()) return;
     if (isEdgeInvalid(e)){
         size_t node0_index = e.getFace().getDelaunayNodeIndex();
         size_t node1_index = e.getTwinEdge().getFace().getDelaunayNodeIndex();
         DCEL::EdgeWrapper newE = dcel.flip_edge(e);
 
         std::vector<size_t> old_leafs_indexes = {node0_index, node1_index};
-        std::vector<DCEL::FaceWrapper> newFaces = {newE.getFace(), newE.getTwinEdge().getFace()};
-        tree.insert(newFaces, old_leafs_indexes); //у меня реализовано что сразу для двух делается
+        std::vector<DCEL::FaceWrapper> new_faces = {newE.getFace(), newE.getTwinEdge().getFace()};
+        std::vector<size_t> new_leafs_indexes = tree.insert(new_faces, old_leafs_indexes); //у меня реализовано что сразу для двух делается
+        //см. комменатрии под tree.insert чтобы понять что тут происходит и почему именно так((((
+        for (int i = 0; i < new_leafs_indexes.size(); ++i) {
+            dcel.update_face_node_index(new_faces[i], new_leafs_indexes[i]);
+        }
+
         validateEdge(newE.getNextEdge());
+        validateEdge(newE.getPrevEdge());
+        validateEdge(newE.getTwinEdge().getNextEdge());
         validateEdge(newE.getTwinEdge().getPrevEdge());
     }
 }
 
-bool DelaunayTriangulation::isEdgeInvalid(DCEL::EdgeWrapper e) {
-    if (e.getSourceVertex().is_infinite() || e.getNextEdge().getSourceVertex().is_infinite()){
-        //наше ребро инцидентно одной бесокнечной вершине, двум уже не может т.к. вызывается после split_face, т.е. уже минимум 3 face
+
+bool Triangulation::DelaunayTriangulation::isEdgeInvalid(DCEL::EdgeWrapper e) {
+    if (e.getSourceVertex().is_infinite() || e.getNextEdge().getSourceVertex().is_infinite()) {
+        //наше ребро инцидентно одной бесокнечной вершине, двум уже не может т.к. отсеили до вызова этого метода
 
         DCEL::EdgeWrapper e_twin = e.getTwinEdge();
 
-        // найдём конечное ребро (через тернарник тк нет пустого конструктора)
-        DCEL::EdgeWrapper finite_edge = e_twin.getSourceVertex().is_infinite() ? e_twin.getNextEdge() : e_twin.getPrevEdge();
-        //два варианта:
-        // e_twin идёт из бесконечности в конечную вершину => следующим в CCW-обходе будет конечное ребро
-        // e_twin идёт из конечной вершины в бесконечность => предыдущее ребро в CCW-обходе – конечное
+        // ищем конечное ребро в twin-грани
+        DCEL::EdgeWrapper finite_edge = e_twin; //перезапишется
+        {
+            DCEL::EdgeWrapper iter = e_twin;
+            for (int attempt = 0; attempt < 3; ++attempt) {
+                if (!iter.getSourceVertex().is_infinite() && !iter.getNextEdge().getSourceVertex().is_infinite()) {
+                    finite_edge = iter;
+                    break;
+                }
+                iter = iter.getNextEdge();
+            }
+        }
+        DCEL::VertexWrapper D = e.getPrevEdge().getSourceVertex();
+        if (D.is_infinite()) return false; // если D бесконечна — флип невозможен и не нужен, вроде как не очень возможна такая ситуация, но лишнем не будет
 
+        Point_2 finiteSource  = finite_edge.getSourceVertex().getGeometry();
+        Point_2 finiteTarget  = finite_edge.getNextEdge().getSourceVertex().getGeometry();
+        Point_2 pd  = D.getGeometry(); //противолежащая
 
-        // Противолежащая вершина относительно ребра |e| в его собственной грани
-        DCEL::VertexWrapper opposite = e.getPrevEdge().getSourceVertex();
-
-        // sorce и target конечного ребра
-        Point_2 fin_source = finite_edge.getSourceVertex().getGeometry();
-        Point_2 fin_target = finite_edge.getNextEdge().getSourceVertex().getGeometry();
-        Point_2 p_opposite = opposite.getGeometry();
-
-        auto orient = vector_s::vector_orientation(fin_source, fin_target, p_opposite);
-        return orient == vector_s::orientation::left;
+        return vector_s::vector_orientation(finiteSource, finiteTarget, pd) == vector_s::orientation::left;
     }
 
-    return vector_s::in_circle(e.getTwinEdge().getSourceVertex().getGeometry(),
+    // Оба конца конечны — стандартный in_circle
+    return vector_s::in_circle(
+            e.getTwinEdge().getSourceVertex().getGeometry(),
             e.getTwinEdge().getNextEdge().getSourceVertex().getGeometry(),
             e.getTwinEdge().getPrevEdge().getSourceVertex().getGeometry(),
             e.getPrevEdge().getSourceVertex().getGeometry());
 }
 
-void DelaunayTriangulation::triangulate() {
+
+void Triangulation::DelaunayTriangulation::triangulate() {
     for (int i = 1; i < points.size(); ++i) { //с 1 тк 0 уже в конструкторе пользовали!
         const Point_2& p = points[i];
         DelaunayTree::point_location location = tree.locate(p);
@@ -67,13 +81,14 @@ void DelaunayTriangulation::triangulate() {
         for (int j = 0; j < new_faces.size(); ++j) {
             dcel.update_face_node_index(new_faces[j], new_leafs_indexes[j]); //во тут уже говнокод, но я не буду проверять а потом искать ошибку в пробрассывании корректной ссылки на face, тем более тут не ссылки а копии везде
         }
+
         for(DCEL::EdgeWrapper e : dcel.get_outgoing_edges(newVertex)){
             validateEdge(e);
         }
     }
 }
 
-DelaunayTriangulation::DelaunayTriangulation(std::vector<Point_2> &pts) {
+Triangulation::DelaunayTriangulation::DelaunayTriangulation(std::vector<Point_2> &pts) {
     auto highestPoint = pts.begin();
     for (auto it = pts.begin(); it != pts.end(); ++it) {
         if (it->getY() > highestPoint->getY() || (it->getY() == highestPoint->getY() && it->getX() > highestPoint->getX()))
