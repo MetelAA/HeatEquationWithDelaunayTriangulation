@@ -1,6 +1,6 @@
 #include "DelaunayTree.h"
 
-std::vector<size_t> DelaunayTree::insert(DCEL::VertexWrapper p_r, std::vector<DCEL::FaceWrapper> &newFaces,
+std::vector<size_t> DelaunayTree::insert(std::vector<DCEL::FaceWrapper> &newFaces,
                                          std::vector<size_t> &old_leafs_indexes) {
     std::vector<size_t> newLeafsIndexes;
     std::vector<Node const *> children;
@@ -41,7 +41,7 @@ std::vector<size_t> DelaunayTree::insert(DCEL::VertexWrapper p_r, std::vector<DC
                 throw std::runtime_error("Undefined behavior: number of childrens in puncturing with a hit on the rib for both old faces (Leafs) must be equal 2");
 
             Internal internal(ov1, ov2, ov3, curOldNodeChilderen);
-            nodes_[old_leafs_indexes[0]] = std::make_unique<Internal>(internal);
+            nodes_[old_leafs_indexes[i]] = std::make_unique<Internal>(internal);
         }
         return newLeafsIndexes;
     } else if (newFaces.size() == 3 && old_leafs_indexes.size() == 1) {

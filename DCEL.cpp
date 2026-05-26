@@ -327,15 +327,40 @@ std::vector<DCEL::EdgeWrapper> DCEL::get_outgoing_edges(DCEL::VertexWrapper v) c
     return outgoing_edges;
 }
 
-void DCEL::flip_edge(size_t p_i_p_j_edge_index) {
+void DCEL::update_face_node_index(DCEL::FaceWrapper face, size_t node_index) {
+    this->faces[face.face_index].node_index = node_index;
+}
+
+DCEL::FaceWrapper DCEL::init_dcel_with_big_inf_triangle(const Point_2 &p0) {
+    coords.push_back(p0);
+
+    size_t p_inf_bottom_index = 0, p_inf_top_index = 1, p_0_index = 2;
+
+    vertexes.emplace_back(Constants::p_inf_right_bottom_index, 0);
+    vertexes.emplace_back(Constants::p_inf_left_top_index, 1);
+    vertexes.emplace_back(0, 2);
+
+    size_t e0_index = 0, e1_index = 1, e2_index = 2;
+    edges.emplace_back(e1_index, e2_index, Constants::invalid_twin_edge, p_inf_bottom_index, 0);
+    edges.emplace_back(e2_index, e0_index, Constants::invalid_twin_edge, p_inf_top_index, 0);
+    edges.emplace_back(e0_index, e1_index, Constants::invalid_twin_edge, p_0_index, 0);
+
+    faces.emplace_back(e0_index);
+    faces[0].node_index = 0; //делаем это здесь, чтобы не перекидывать в DelaunayTree DCEL что может путать
+
+    return FaceWrapper(0, this); //возвращаем корневую грань (первую), которая на двух бесконечных и одной конечной
+}
+
+
+DCEL::EdgeWrapper DCEL::flip_edge(EdgeWrapper p_i_p_j_edge) {
     //короче, изнчально этот метод был legalize_edge но я потом понял что он не тут долежн быть, увы, так что тут теперь flip_edge и я надеюсь что он правильные, проверить!!!!!!!!
 
 
-    //проинициализируем всё ребра входящие в обе грани (face0 face1)
-    edge e0 = this->edges[p_i_p_j_edge_index];
+    //проинициализируем всё ребра входящие в ОБЕ!!! грани (face0 face1)
+    edge e0 = this->edges[p_i_p_j_edge.edge_index];
     edge e3 = this->edges[e0.twin_edge_index]; //twin ребра есть у всех, кроме трёх ребер входящих в изначальный треугольник, где реальные координаты только у точки p_0
     // и бесконечные у p_-1, p_-2, это нужно написать отдельно! (до этого иначе грохнется) хз можем ли мы попасть в flip_edge с ребром которое соединяет или две бесконечные или одну бесоконечную и конечную вершины
-    size_t e0_index = p_i_p_j_edge_index, e3_index = e0.twin_edge_index;
+    size_t e0_index = p_i_p_j_edge.edge_index, e3_index = e0.twin_edge_index;
 
     // найдём 3 ребра образующих face0 (p_i, p_j, p_r)
     //координаты вроде реальные у всех, все вершины с несуществующими координатами обрабатываем до этого в самом начале
@@ -426,5 +451,6 @@ void DCEL::flip_edge(size_t p_i_p_j_edge_index) {
     this->vertexes[p_i_index].random_edge_index = e4_index;
     this->vertexes[p_j_index].random_edge_index = e1_index;
 
+    return EdgeWrapper(p_i_p_j_edge.edge_index, this); //он типо даже так то не поменялся, но для корректности лучше вернуть новый
 }
 

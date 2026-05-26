@@ -5,7 +5,7 @@
 #include <cstdio>
 #include "Point_2.h"
 #include <optional>
-
+#include "magic_constants.h"
 
 class DCEL {
 private:
@@ -43,7 +43,7 @@ private:
     public:
         face() {}
 
-        face(size_t edgeIndex, size_t nodeIndex) : edge_index(edgeIndex), node_index(nodeIndex) {}
+        face(size_t edgeIndex) : edge_index(edgeIndex) {}
 
         size_t edge_index; //индекс случайного (условно) ребра входящего в эту грань, через него можно найти все остальные
         size_t node_index; //индекс ноды из DelaunayTree в которую входит эта грань, даже фактически не ноды а листа
@@ -72,6 +72,11 @@ public:
 
         bool operator!=(const VertexWrapper &other) const {
             return !(*this == other);
+        }
+
+        bool is_infinite() const {
+            return dcel->vertexes[vertex_index].point_coords_index == Constants::p_inf_left_top_index ||
+                   dcel->vertexes[vertex_index].point_coords_index == Constants::p_inf_right_bottom_index;
         }
 
         EdgeWrapper getEdge() const {
@@ -167,7 +172,7 @@ public:
         DCEL *dcel;
     };
 
-    void flip_edge(size_t p_i_p_j_edge_index);
+    DCEL::EdgeWrapper flip_edge(EdgeWrapper p_i_p_j_edge); //достанем из враппера индекс сами, в ручную
 
     void update_face_node_index(FaceWrapper face, size_t node_index); //т.к. везде работаем с копиями или ссылками непойми откуда, то сюда нужно будет передать wrapper, тут внутри мы можем посмтреть на какую face из
     //вектора faces он ссылается т.к. face_index - private и установить соответсвующей face такой nodeIndex
@@ -181,11 +186,10 @@ public:
 
     std::vector<EdgeWrapper> get_outgoing_edges(VertexWrapper v) const;
 
+    DCEL::FaceWrapper init_dcel_with_big_inf_triangle(const Point_2& p0); //начальная точка, которая самая верхняя и самая правая из самых верхних, возращаем обёртку на первую вершину чтобы потом закинуть её корреткный node_index
+    //возвращаем корневую грань (первую), которая на двух бесконечных и одной конечной
 };
 
-void DCEL::update_face_node_index(DCEL::FaceWrapper face, size_t node_index) {
-    this->faces[face.face_index].node_index = node_index;
-}
 
 
 #endif //HEATEQUATIONWITHDELAUNAYTRIANGULATION_DCEL_H
