@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 #include <stdexcept>
+#include <cmath>
 #include "../Triangulation/Point_2.h"
 #include "../Triangulation/DCEL.h"
 #include "../Triangulation/DTO.h"
@@ -54,13 +55,57 @@ public:
     };
 
     FiniteElementMethodHeatEquation(const std::vector<Point_2>& points, const std::vector<DTO::Face>& faces, const std::vector<DTO::BoundaryNode>& boundaryNodes) {
+        //в этот конструктор попадают уже только внутренние грани, т.е. отсеяные от того что лишним образом натреагулировали
+        //boundaryNodes - все граничные ноды, нужно где-то до этого напроецировать на них их температуры, не охота это здесь разводить учитывая что у нас есть список этих вершин на других, более ранних шагах
 
+        //булем считать локальные матрицы для каждого элемента
+        for(DTO::Face face : faces){
+            Point_2 i = points[face.v1_index];
+            Point_2 j = points[face.v2_index];
+            Point_2 k = points[face.v3_index];
+
+            double s = i.getX() * (j.getY() - k.getY()) + j.getX() * (k.getY() - i.getY()) + k.getX() * (i.getY() - j.getY()); //площадь * 2
+
+            double b_i, c_i; //vertex i, a_* - нет тк они откисают на этапе применения градиента
+            b_i = j.getY() - k.getY();
+            c_i = k.getX() - j.getX();
+
+            double b_j, c_j;
+            b_j = k.getY() - i.getY();
+            c_j = i.getX() - k.getX();
+
+            double b_k, c_k;
+            b_k = i.getY() - j.getX();
+            c_k = j.getX() - i.getX();
+
+            std::vector<std::vector<double>> local_K;
+            {
+                double multiplier = 1.0 / (2*s);
+                local_K = {
+                        {multiplier * (std::pow(b_i, 2) + std::pow(c_i, 2)), multiplier * (b_i*b_j + c_i*c_j), multiplier * (b_i*b_k + c_i*c_k) },
+                        {multiplier * (b_j*b_i + c_j*c_i), multiplier * (std::pow(b_j, 2) + std::pow(c_j, 2)), multiplier * (b_j*b_k + c_j*c_k) },
+                        {multiplier * (b_k*b_i + c_k*c_i), multiplier * (b_k*b_j + c_k*c_j), multiplier * (std::pow(b_k, 2) + std::pow(c_k, 2)) }
+                };
+            }
+
+            std::vector<std::vector<double>> local_M;
+            {
+                double m = s / 2.0 / 12.0; //multiplier
+                local_M = {
+                        {m * 2, m, m},
+                        {m, m * 2, m},
+                        {m, m, 2 * m}
+                };
+            }
+
+            //теперь складываем в глобальные матрицы
+        }
     }
 
 private:
     Nodes nodes;
     std::vector<std::vector<double>> A;
-    std::vector<double> M;
+    std::vector<std::vector<double>> M;
 };
 
 

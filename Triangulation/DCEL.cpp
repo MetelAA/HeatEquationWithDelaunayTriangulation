@@ -472,7 +472,6 @@ std::vector<DCEL::VertexWrapper> DCEL::getVertexesInWrappers() {
 }
 
 
-
 void DCEL::getTriangulationWithCorrectBoundary(const std::unordered_map<Point_2, Point_2> &boundary_vertexes_map) {
 
     //сделаем обход граней, нужно найти все внешние грани
@@ -481,13 +480,13 @@ void DCEL::getTriangulationWithCorrectBoundary(const std::unordered_map<Point_2,
 
     //две вершины с отрицательными индексами коориднат (бесконечные) всегда лежат на индексах 1 и 0 в векторе вершин.
     //индекс = 0
-    for(DCEL::EdgeWrapper edge : this->get_outgoing_edges(this->getVertexesInWrappers()[0])){
-        if (!visitedFaces[edge.getFace().getCurrentFaceIndex()]){
+    for (DCEL::EdgeWrapper edge : this->get_outgoing_edges(this->getVertexesInWrappers()[0])) {
+        if (!visitedFaces[edge.getFace().getCurrentFaceIndex()]) {
             visitedFaces[edge.getFace().getCurrentFaceIndex()] = true;
             externalFaces.push(edge.getFace());
         }
-        if (edge.hasValidTwin()){
-            if (!visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()]){
+        if (edge.hasValidTwin()) {
+            if (!visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()]) {
                 visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()] = true;
                 externalFaces.push(edge.getTwinEdge().getFace());
             }
@@ -495,13 +494,13 @@ void DCEL::getTriangulationWithCorrectBoundary(const std::unordered_map<Point_2,
     }
 
     //индекс = 1
-    for(DCEL::EdgeWrapper edge : this->get_outgoing_edges(this->getVertexesInWrappers()[1])){
-        if (!visitedFaces[edge.getFace().getCurrentFaceIndex()]){
+    for (DCEL::EdgeWrapper edge : this->get_outgoing_edges(this->getVertexesInWrappers()[1])) {
+        if (!visitedFaces[edge.getFace().getCurrentFaceIndex()]) {
             visitedFaces[edge.getFace().getCurrentFaceIndex()] = true;
             externalFaces.push(edge.getFace());
         }
-        if (edge.hasValidTwin()){
-            if (!visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()]){
+        if (edge.hasValidTwin()) {
+            if (!visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()]) {
                 visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()] = true;
                 externalFaces.push(edge.getTwinEdge().getFace());
             }
@@ -509,37 +508,37 @@ void DCEL::getTriangulationWithCorrectBoundary(const std::unordered_map<Point_2,
     }
 
     //запистим обход
-    while(!externalFaces.empty()){
+    while (!externalFaces.empty()) {
         DCEL::FaceWrapper face = externalFaces.front();
         externalFaces.pop();
         DCEL::EdgeWrapper start_edge = face.getEdge();
         DCEL::EdgeWrapper iter_edge = start_edge;
 
-        do{
-            if(!iter_edge.getSourceVertex().is_infinite()){
-                Point_2 srcPt = iter_edge.getSourceVertex().getGeometry();
-                Point_2 dstPt = iter_edge.getNextEdge().getSourceVertex().getGeometry();
+        do {
+            if (!iter_edge.getSourceVertex().is_infinite()) {
+                Point_2 sourceVertexCoords = iter_edge.getSourceVertex().getGeometry();
+                Point_2 targetVertexCoords = iter_edge.getNextEdge().getSourceVertex().getGeometry();
 
                 bool isBoundary = false;
-                // прямое направление
-                if(boundary_vertexes_map.count(srcPt) != 0
-                   && boundary_vertexes_map.at(srcPt) == dstPt){
+
+                if (boundary_vertexes_map.count(sourceVertexCoords) != 0  // прямое направление
+                    && boundary_vertexes_map.at(sourceVertexCoords) == targetVertexCoords) {
                     isBoundary = true;
-                }else if(boundary_vertexes_map.count(dstPt) != 0 // обратное направление
-                         && boundary_vertexes_map.at(dstPt) == srcPt){
+                } else if (boundary_vertexes_map.count(targetVertexCoords) != 0 // обратное направление
+                           && boundary_vertexes_map.at(targetVertexCoords) == sourceVertexCoords) {
                     isBoundary = true;
                 }
 
-                if(!isBoundary){
+                if (!isBoundary) {
                     DCEL::EdgeWrapper iter_edge_twin = iter_edge.getTwinEdge();
-                    if(!visitedFaces[iter_edge_twin.getFace().getCurrentFaceIndex()]){
+                    if (!visitedFaces[iter_edge_twin.getFace().getCurrentFaceIndex()]) {
                         visitedFaces[iter_edge_twin.getFace().getCurrentFaceIndex()] = true;
                         externalFaces.push(iter_edge_twin.getFace());
                     }
                 }
             }
             iter_edge = iter_edge.getNextEdge();
-        }while (start_edge != iter_edge);
+        } while (start_edge != iter_edge);
     }
 
     std::vector<DCEL::FaceWrapper> notVisitedFaces;
@@ -548,8 +547,6 @@ void DCEL::getTriangulationWithCorrectBoundary(const std::unordered_map<Point_2,
         if (!visitedFaces[i])
             notVisitedFaces.emplace_back(i, this);
     }
-
-
 
 
 }
