@@ -3,4 +3,4 @@ project(HeatEquationWithDelaunayTriangulation)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(HeatEquationWithDelaunayTriangulation main.cpp Point_2.h vector_stuff.h DCEL.cpp DCEL.h DelaunayTree.cpp DelaunayTree.h DelaunayTriangulation.cpp DelaunayTriangulation.h magic_constants.h)
+add_executable(HeatEquationWithDelaunayTriangulation main.cpp Triangulation/Point_2.h Triangulation/vector_stuff.h Triangulation/DCEL.cpp Triangulation/DCEL.h Triangulation/DelaunayTree.cpp Triangulation/DelaunayTree.h Triangulation/DelaunayTriangulation.cpp Triangulation/DelaunayTriangulation.h Triangulation/magic_constants.h FiniteElementMethod/FiniteElementMethodHeatEquation.cpp FiniteElementMethod/FiniteElementMethodHeatEquation.h Triangulation/DTO.h)

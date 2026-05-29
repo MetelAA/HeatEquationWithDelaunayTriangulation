@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <queue>
 #include "DCEL.h"
 
 DCEL::VertexWrapper
@@ -461,3 +462,94 @@ DCEL::EdgeWrapper DCEL::flip_edge(EdgeWrapper p_i_p_j_edge) {
                        this); //он типо даже так то не поменялся, но для корректности лучше вернуть новый
 }
 
+
+std::vector<DCEL::VertexWrapper> DCEL::getVertexesInWrappers() {
+    std::vector<DCEL::VertexWrapper> wrappers;
+    for (int i = 0; i < this->vertexes.size(); ++i) {
+        wrappers.emplace_back(i, this);
+    }
+    return wrappers;
+}
+
+
+
+void DCEL::getTriangulationWithCorrectBoundary(const std::unordered_map<Point_2, Point_2> &boundary_vertexes_map) {
+
+    //сделаем обход граней, нужно найти все внешние грани
+    std::queue<DCEL::FaceWrapper> externalFaces;
+    std::vector<bool> visitedFaces(this->faces.size(), false);
+
+    //две вершины с отрицательными индексами коориднат (бесконечные) всегда лежат на индексах 1 и 0 в векторе вершин.
+    //индекс = 0
+    for(DCEL::EdgeWrapper edge : this->get_outgoing_edges(this->getVertexesInWrappers()[0])){
+        if (!visitedFaces[edge.getFace().getCurrentFaceIndex()]){
+            visitedFaces[edge.getFace().getCurrentFaceIndex()] = true;
+            externalFaces.push(edge.getFace());
+        }
+        if (edge.hasValidTwin()){
+            if (!visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()]){
+                visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()] = true;
+                externalFaces.push(edge.getTwinEdge().getFace());
+            }
+        }
+    }
+
+    //индекс = 1
+    for(DCEL::EdgeWrapper edge : this->get_outgoing_edges(this->getVertexesInWrappers()[1])){
+        if (!visitedFaces[edge.getFace().getCurrentFaceIndex()]){
+            visitedFaces[edge.getFace().getCurrentFaceIndex()] = true;
+            externalFaces.push(edge.getFace());
+        }
+        if (edge.hasValidTwin()){
+            if (!visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()]){
+                visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()] = true;
+                externalFaces.push(edge.getTwinEdge().getFace());
+            }
+        }
+    }
+
+    //запистим обход
+    while(!externalFaces.empty()){
+        DCEL::FaceWrapper face = externalFaces.front();
+        externalFaces.pop();
+        DCEL::EdgeWrapper start_edge = face.getEdge();
+        DCEL::EdgeWrapper iter_edge = start_edge;
+
+        do{
+            if(!iter_edge.getSourceVertex().is_infinite()){
+                Point_2 srcPt = iter_edge.getSourceVertex().getGeometry();
+                Point_2 dstPt = iter_edge.getNextEdge().getSourceVertex().getGeometry();
+
+                bool isBoundary = false;
+                // прямое направление
+                if(boundary_vertexes_map.count(srcPt) != 0
+                   && boundary_vertexes_map.at(srcPt) == dstPt){
+                    isBoundary = true;
+                }else if(boundary_vertexes_map.count(dstPt) != 0 // обратное направление
+                         && boundary_vertexes_map.at(dstPt) == srcPt){
+                    isBoundary = true;
+                }
+
+                if(!isBoundary){
+                    DCEL::EdgeWrapper iter_edge_twin = iter_edge.getTwinEdge();
+                    if(!visitedFaces[iter_edge_twin.getFace().getCurrentFaceIndex()]){
+                        visitedFaces[iter_edge_twin.getFace().getCurrentFaceIndex()] = true;
+                        externalFaces.push(iter_edge_twin.getFace());
+                    }
+                }
+            }
+            iter_edge = iter_edge.getNextEdge();
+        }while (start_edge != iter_edge);
+    }
+
+    std::vector<DCEL::FaceWrapper> notVisitedFaces;
+
+    for (size_t i = 0; i < this->faces.size(); ++i) {
+        if (!visitedFaces[i])
+            notVisitedFaces.emplace_back(i, this);
+    }
+
+
+
+
+}

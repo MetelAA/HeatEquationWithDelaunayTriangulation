@@ -17,6 +17,10 @@ public:
         return {this->x * multiplier, this->y * multiplier};
     }
 
+    bool operator==(const Point_2& other) const {
+        return x == other.x && y == other.y;
+    }
+
     static double pseudo_scalar(const Point_2& a, const Point_2& b){
         return a.x * b.y - a.y * b.x;
     }
@@ -38,5 +42,18 @@ protected:
 
 
 };
+
+namespace std {
+    template <>
+    struct hash<Point_2> {
+        std::size_t operator()(const Point_2& p) const {
+            // простой способ – склеить биты x и y
+            std::size_t h1 = std::hash<double>{}(p.getX());
+            std::size_t h2 = std::hash<double>{}(p.getY());
+            return h1 ^ (h2 << 1);
+        }
+    };
+}
+
 
 #endif //HEATEQUATIONWITHDELAUNAYTRIANGULATION_POINT_2_H

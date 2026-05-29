@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
+#include <unordered_map>
 
 
 namespace Triangulation{
@@ -14,6 +15,7 @@ namespace Triangulation{
         DelaunayTriangulation(std::vector<Point_2> &pts);
 
         void triangulate();
+    
     private:
         void validateEdge(DCEL::EdgeWrapper e);
         bool isEdgeInvalid(DCEL::EdgeWrapper e);

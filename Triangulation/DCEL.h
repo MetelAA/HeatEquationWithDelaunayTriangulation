@@ -5,7 +5,11 @@
 #include <cstdio>
 #include "Point_2.h"
 #include <optional>
+#include <unordered_map>
+#include <bits/unordered_map.h>
 #include "magic_constants.h"
+
+
 
 class DCEL {
 private:
@@ -114,6 +118,10 @@ public:
             return !(*this == other);
         }
 
+        bool hasValidTwin() const {
+            return dcel->edges[edge_index].twin_edge_index != Constants::invalid_twin_edge;
+        }
+
         EdgeWrapper getNextEdge() const {
             edge &curEdge = dcel->edges[edge_index];
             return EdgeWrapper(curEdge.next_edge_index, dcel);
@@ -188,7 +196,12 @@ public:
 
     DCEL::FaceWrapper init_dcel_with_big_inf_triangle(const Point_2& p0); //начальная точка, которая самая верхняя и самая правая из самых верхних, возращаем обёртку на первую вершину чтобы потом закинуть её корреткный node_index
     //возвращаем корневую грань (первую), которая на двух бесконечных и одной конечной
+
+    std::vector<VertexWrapper> getVertexesInWrappers();
+    void getTriangulationWithCorrectBoundary(const std::unordered_map<Point_2, Point_2>& boundary_vertexes_map); //содержит мапу, где храняться все ребра образующие границу, т.к. ребра у нас направленные
+    //то содержит обход границы против часовой стрелки, ключом мапы выступает исток ребра, значением - сток. Индексация
 };
+
 
 
 

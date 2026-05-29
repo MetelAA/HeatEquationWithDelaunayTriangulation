@@ -1,6 +1,7 @@
+#include <queue>
 #include "DelaunayTriangulation.h"
 
-void Triangulation::DelaunayTriangulation::validateEdge(DCEL::EdgeWrapper e) {
+    void Triangulation::DelaunayTriangulation::validateEdge(DCEL::EdgeWrapper e) {
     if (e.getSourceVertex().is_infinite() && e.getNextEdge().getSourceVertex().is_infinite()) return;
     if (isEdgeInvalid(e)){
         size_t node0_index = e.getFace().getDelaunayNodeIndex();
@@ -109,4 +110,3 @@ Triangulation::DelaunayTriangulation::DelaunayTriangulation(std::vector<Point_2>
 
     tree = DelaunayTree(root_face, points.size());
 }
-
