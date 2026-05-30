@@ -3,23 +3,22 @@
 
 #include <vector>
 #include <cstdio>
-#include "Point_2.h"
+#include "point_2.h"
 #include <optional>
 #include <unordered_map>
-#include <bits/unordered_map.h>
 #include "magic_constants.h"
+#include "dto.h"
 
 
-
-class DCEL {
+class dcel {
 private:
     class vertex {
     public:
         vertex() {}
 
         vertex(size_t pointCoordsIndex, size_t randomEdgeIndex) : point_coords_index(pointCoordsIndex),
-                                                                                   random_edge_index(randomEdgeIndex)
-                                                                                   {}
+                                                                  random_edge_index(randomEdgeIndex)
+        {}
 
         size_t point_coords_index; // индекс координат точки(Pint_2) в vector coords, для p-1, p-2 тут будут два не валидных магических числа из констант!
         //Почему не использовал optional тут, ну типо доп нагрузка в дата классе, где гораздо! чаще вершины с корректным индексом, плюс тут два магических значения разного значения, мы по разному обрабатываем
@@ -33,8 +32,8 @@ private:
 
         edge(size_t nextEdgeIndex, size_t prevEdgeIndex, size_t twinEdgeIndex, size_t sourceVertexIndex,
              size_t faceIndex) : next_edge_index(nextEdgeIndex), prev_edge_index(prevEdgeIndex),
-                              twin_edge_index(twinEdgeIndex), source_vertex_index(sourceVertexIndex),
-                              face_index(faceIndex){}
+                                 twin_edge_index(twinEdgeIndex), source_vertex_index(sourceVertexIndex),
+                                 face_index(faceIndex){}
 
         size_t next_edge_index; //next_edge_in_current_face_index индекс следующего ребра в той грани в которую входит это ребро, всегда если триангуляции в моменте корректна
         size_t prev_edge_index; //prev_edge_in_current_face_index тож самое что сверху ток предыдыущее
@@ -50,11 +49,11 @@ private:
         face(size_t edgeIndex) : edge_index(edgeIndex) {}
 
         size_t edge_index; //индекс случайного (условно) ребра входящего в эту грань, через него можно найти все остальные
-        size_t node_index; //индекс ноды из DelaunayTree в которую входит эта грань, даже фактически не ноды а листа
+        size_t node_index; //индекс ноды из delaunay_tree в которую входит эта грань, даже фактически не ноды а листа
     };
 
     std::vector<vertex> vertexes;
-    std::vector<Point_2> coords;
+    std::vector<point_2> coords;
     std::vector<edge> edges;
     std::vector<face> faces;
 
@@ -66,9 +65,9 @@ public:
     class EdgeWrapper;
 
     class VertexWrapper {
-        friend DCEL;
+        friend dcel;
     public:
-        VertexWrapper(size_t vertexIndex, DCEL *dcel) : vertex_index(vertexIndex), dcel(dcel) {}
+        VertexWrapper(size_t vertexIndex, dcel *dcel) : vertex_index(vertexIndex), dcel(dcel) {}
 
         bool operator==(const VertexWrapper &other) const {
             return vertex_index == other.vertex_index;
@@ -89,7 +88,7 @@ public:
         }
 
         //мб добавить возврат типа ребра, типо нормал, или те которые на бесконечности (по отдельному типу для каждого!)
-        Point_2 getGeometry() const {
+        point_2 getGeometry() const {
             vertex curVertex = dcel->vertexes[vertex_index];
             return dcel->coords[curVertex.point_coords_index];
         }
@@ -102,13 +101,13 @@ public:
         }
 
         size_t vertex_index; // индекс вершины в vector vertexes которую оборачивает в этот wrapper
-        DCEL *dcel;
+        dcel *dcel;
     };
 
     class EdgeWrapper {
-        friend DCEL;
+        friend dcel;
     public:
-        EdgeWrapper(size_t edgeIndex, DCEL *dcel) : edge_index(edgeIndex), dcel(dcel) {}
+        EdgeWrapper(size_t edgeIndex, dcel *dcel) : edge_index(edgeIndex), dcel(dcel) {}
 
         bool operator==(const EdgeWrapper &other) const {
             return edge_index == other.edge_index;
@@ -154,13 +153,13 @@ public:
         }
 
         size_t edge_index; // индекс ребра в vector vertexes которую оборачивает в этот wrapper
-        DCEL *dcel;
+        dcel *dcel;
     };
 
     class FaceWrapper {
-        friend DCEL;
+        friend dcel;
     public:
-        FaceWrapper(size_t faceIndex, DCEL *dcel) : face_index(faceIndex), dcel(dcel) {}
+        FaceWrapper(size_t faceIndex, dcel *dcel) : face_index(faceIndex), dcel(dcel) {}
 
         EdgeWrapper getEdge() const {
             face curFace = dcel->faces[face_index];
@@ -177,16 +176,16 @@ public:
         }
 
         size_t face_index; // индекс грани в vector vertexes которую оборачивает в этот wrapper
-        DCEL *dcel;
+        dcel *dcel;
     };
 
-    DCEL::EdgeWrapper flip_edge(EdgeWrapper p_i_p_j_edge); //достанем из враппера индекс сами, в ручную
+    dcel::EdgeWrapper flip_edge(EdgeWrapper p_i_p_j_edge); //достанем из враппера индекс сами, в ручную
 
     void update_face_node_index(FaceWrapper face, size_t node_index); //т.к. везде работаем с копиями или ссылками непойми откуда, то сюда нужно будет передать wrapper, тут внутри мы можем посмтреть на какую face из
     //вектора faces он ссылается т.к. face_index - private и установить соответсвующей face такой nodeIndex
 
     VertexWrapper split_face(FaceWrapper faceWithPointOn, std::optional<EdgeWrapper> edgeWithPointOn,
-                             Point_2 point); //возвращаем обёртку на вершину которой сплитанули, то ребро которые optional используется только тогда, когда мы попали на ребро!
+                             point_2 point); //возвращаем обёртку на вершину которой сплитанули, то ребро которые optional используется только тогда, когда мы попали на ребро!
 
     std::vector<FaceWrapper> get_incident_faces(
             VertexWrapper v) const; //выдаёт все инцидентные грани для вершины после split_face нужно запускать для той же вершины для которой запускали split_face, т.е.
@@ -194,12 +193,13 @@ public:
 
     std::vector<EdgeWrapper> get_outgoing_edges(VertexWrapper v) const;
 
-    DCEL::FaceWrapper init_dcel_with_big_inf_triangle(const Point_2& p0); //начальная точка, которая самая верхняя и самая правая из самых верхних, возращаем обёртку на первую вершину чтобы потом закинуть её корреткный node_index
+    dcel::FaceWrapper init_dcel_with_big_inf_triangle(const point_2& p0); //начальная точка, которая самая верхняя и самая правая из самых верхних, возращаем обёртку на первую вершину чтобы потом закинуть её корреткный node_index
     //возвращаем корневую грань (первую), которая на двух бесконечных и одной конечной
 
-    std::vector<VertexWrapper> getVertexesInWrappers();
-    void getTriangulationWithCorrectBoundary(const std::unordered_map<Point_2, Point_2>& boundary_vertexes_map); //содержит мапу, где храняться все ребра образующие границу, т.к. ребра у нас направленные
-    //то содержит обход границы против часовой стрелки, ключом мапы выступает исток ребра, значением - сток. Индексация
+    std::vector<dcel::VertexWrapper> getVertexesInWrappers();
+    dto::TriangulationResult getTriangulationWithCorrectBoundary(const std::unordered_map<point_2, point_2>& boundary_vertexes_map);
+    //содержит мапу, где храняться все ребра образующие границу, т.к. ребра у нас направленные,
+    //то содержит обход границы против часовой стрелки, ключом мапы выступает исток ребра, значением - сток
 };
 
 
