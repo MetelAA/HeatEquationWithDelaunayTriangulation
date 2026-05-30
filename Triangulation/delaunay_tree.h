@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <memory>
 #include <cmath>
+#include <iostream>
 #include <utility>
 #include "dcel.h"
 #include "vector_stuff.h"
@@ -63,8 +64,12 @@ private:
             //сделаем проверку на правильность ориентации ребер (обход против часовой)
             if (!v1.is_infinite() && !v2.is_infinite() && !v3.is_infinite()) {
                 if (vector_s::vector_orientation(v1.getGeometry(), v2.getGeometry(), v3.getGeometry()) !=
-                    vector_s::orientation::left)
+                    vector_s::orientation::left) {
+                    std::cout << "v1: x |" << v1.getGeometry().getX() << "|, y |" << v1.getGeometry().getY() << "|; " << "v2: x |" << v2.getGeometry().getX() << "|, y |" << v2.getGeometry().getY() <<"|; "
+        << "v3: x |" << v3.getGeometry().getX() << "|, y |" << v3.getGeometry().getY() << "|\n";;
                     throw std::runtime_error("orientation of triangle bypass must be left!");
+                }
+
             }
         }
 

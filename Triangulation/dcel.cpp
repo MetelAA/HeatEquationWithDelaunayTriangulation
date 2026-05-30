@@ -2,6 +2,8 @@
 #include <queue>
 #include "dcel.h"
 
+#include <iostream>
+
 dcel::VertexWrapper
 dcel::split_face(dcel::FaceWrapper faceWithPointOn, std::optional<dcel::EdgeWrapper> edgeWithPointOn, point_2 point) {
     if (edgeWithPointOn.has_value()) {
@@ -128,6 +130,7 @@ dcel::split_face(dcel::FaceWrapper faceWithPointOn, std::optional<dcel::EdgeWrap
         //добавим новые грани, face2, face3, face4, face5 которые образуют новые ребра, т.к. face0, face1 удаляем, то их индексы переназначим face2 и face3 соответсвенно
         face face2, face3, face4, face5;
         size_t face_number = this->faces.size() - 1;
+
         size_t face2_index = face0_index, face3_index = face1_index, face4_index = face_number + 1, face5_index =
                 face_number + 2;
 
@@ -263,9 +266,9 @@ dcel::split_face(dcel::FaceWrapper faceWithPointOn, std::optional<dcel::EdgeWrap
         }
 
         face face1, face2, face3;
-        size_t face_number = this->faces.size() - 1;
-        size_t face1_index = face0_index, face2_index = face_number + 1, face3_index = face_number +
-                                                                                       2; //т.к. face0 удаляем, то на её место запихнём face1 (не забыть в конце впихнуть), остальные две - новые
+        size_t face_number = this->faces.size();
+        size_t face1_index = face0_index, face2_index = face_number, face3_index = face_number + 1;
+        //т.к. face0 удаляем, то на её место запихнём face1 (не забыть в конце впихнуть), остальные две - новые
         face1.edge_index = e0_index;
         //дату также не заполянем, в прицнипе не нужна она, как оказывается)))
         face2.edge_index = e2_index;
@@ -286,6 +289,9 @@ dcel::split_face(dcel::FaceWrapper faceWithPointOn, std::optional<dcel::EdgeWrap
 
         p_r.random_edge_index = e4_index; //закидываем случайный номер исходяшего ребра в новую вершину
 
+        this->edges[e0_index] = e0;
+        this->edges[e1_index] = e1;
+        this->edges[e2_index] = e2;
         this->edges.push_back(e3);
         this->edges.push_back(e4);
         this->edges.push_back(e5);
@@ -334,12 +340,18 @@ void dcel::update_face_node_index(dcel::FaceWrapper face, size_t node_index) {
 }
 
 
-dcel::FaceWrapper dcel::init_dcel_with_big_inf_triangle(const point_2 &p0) {
+dcel::FaceWrapper dcel::init_dcel_with_big_inf_triangle(const point_2 &p0, size_t coordsSize) {
+    this->coords.reserve(coordsSize);
+    this->edges.reserve(coordsSize);
+    this->vertexes.reserve(coordsSize);
+    this->faces.reserve(coordsSize);
+
     coords.push_back(p0);
 
     const size_t inf_left_top_index = 0;
     const size_t inf_right_bottom_index = 1;
     const size_t p0_index = 2;
+
 
     vertexes.emplace_back(Constants::p_inf_left_top_index, 0); // 0 индекс исходящего ребра из верхней левой веришны
     vertexes.emplace_back(Constants::p_inf_right_bottom_index, 1); // 1 индекс исходящего ребра из правой нижней веришны
@@ -378,6 +390,10 @@ dcel::EdgeWrapper dcel::flip_edge(EdgeWrapper p_i_p_j_edge) {
     size_t p_i_index = e0.source_vertex_index, p_j_index = this->edges[e0.next_edge_index].source_vertex_index,
             p_r_index = this->edges[e0.prev_edge_index].source_vertex_index, p_k_index = this->edges[e3.prev_edge_index].source_vertex_index;
 
+    if (p_r_index == p_k_index) {
+        std::cout << "pizdec";
+    }
+
     //доинициализируем все старые ребра
     edge e1 = this->edges[e0.next_edge_index];
     edge e2 = this->edges[e0.prev_edge_index];
@@ -397,12 +413,11 @@ dcel::EdgeWrapper dcel::flip_edge(EdgeWrapper p_i_p_j_edge) {
         //дату как обычно не трогаем
     }
 
-    {//забиваем правильными параметрами e6
+    {//забиваем правильными параметрами e7
         e7.next_edge_index = e2_index;
         e7.prev_edge_index = e4_index;
         e7.twin_edge_index = e6_index;
         e7.source_vertex_index = p_k_index;
-        //дату как обычно не трогаем
     }
 
     //теперь обновим инфу у старых

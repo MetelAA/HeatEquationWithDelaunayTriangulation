@@ -4,6 +4,9 @@ std::vector<size_t> delaunay_tree::insert(std::vector<dcel::FaceWrapper> &newFac
                                           std::vector<size_t> &old_leafs_indexes) {
     std::vector<size_t> newLeafsIndexes; //он же children_indexes
 
+
+
+
     for (int i = 0; i < newFaces.size(); ++i) {
         dcel::VertexWrapper v1 = newFaces[i].getEdge().getSourceVertex();
         dcel::VertexWrapper v2 = newFaces[i].getEdge().getNextEdge().getSourceVertex();

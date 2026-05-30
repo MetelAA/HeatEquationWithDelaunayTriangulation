@@ -193,7 +193,7 @@ public:
 
     std::vector<EdgeWrapper> get_outgoing_edges(VertexWrapper v) const;
 
-    dcel::FaceWrapper init_dcel_with_big_inf_triangle(const point_2& p0); //начальная точка, которая самая верхняя и самая правая из самых верхних, возращаем обёртку на первую вершину чтобы потом закинуть её корреткный node_index
+    dcel::FaceWrapper init_dcel_with_big_inf_triangle(const point_2& p0, size_t coordsSize); //начальная точка, которая самая верхняя и самая правая из самых верхних, возращаем обёртку на первую вершину чтобы потом закинуть её корреткный node_index
     //возвращаем корневую грань (первую), которая на двух бесконечных и одной конечной
 
     std::vector<dcel::VertexWrapper> getVertexesInWrappers();

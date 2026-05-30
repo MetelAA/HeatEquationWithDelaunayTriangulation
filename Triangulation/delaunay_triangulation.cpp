@@ -11,7 +11,6 @@ void triangulation::delaunay_triangulation::validateEdge(dcel::EdgeWrapper start
         toValidate.pop();
 
         if (!e.hasValidTwin()) continue; //если мы попали на одни из ребер соединяющих 3 начальные вершины между собой, то у него нет твинов и оно не разу не измениться
-        if (e.getSourceVertex().is_infinite() && e.getNextEdge().getSourceVertex().is_infinite()) continue;
         if (isEdgeInvalid(e)) {
             size_t node0_index = e.getFace().getDelaunayNodeIndex();
             size_t node1_index = e.getTwinEdge().getFace().getDelaunayNodeIndex();
@@ -31,62 +30,31 @@ void triangulation::delaunay_triangulation::validateEdge(dcel::EdgeWrapper start
             toValidate.push(newE.getTwinEdge().getNextEdge());
             toValidate.push(newE.getTwinEdge().getPrevEdge());
         }
-
-
     }
 
 
 }
 
 
-bool triangulation::delaunay_triangulation::isEdgeInvalid(dcel::EdgeWrapper e) {
-    if (e.getSourceVertex().is_infinite() || e.getNextEdge().getSourceVertex().is_infinite()) {
-        //наше ребро инцидентно одной бесокнечной вершине, двум уже не может т.к. отсеили до вызова этого метода
-
-
-        dcel::EdgeWrapper e_twin = e.getTwinEdge();
-
-        // ищем конечное ребро в twin-грани
-        dcel::EdgeWrapper finite_edge = e_twin;
-        bool found_finite = false;
-        {
-            dcel::EdgeWrapper iter = e_twin;
-            for (int attempt = 0; attempt < 3; ++attempt) {
-                if (!iter.getSourceVertex().is_infinite() && !iter.getNextEdge().getSourceVertex().is_infinite()) {
-                    finite_edge = iter;
-                    found_finite = true;
-                    break;
-                }
-                iter = iter.getNextEdge();
-            }
-        }
-        if (!found_finite) return false; //если не нашли конечное, то гг, бесконечные мы не трогаем
-
-        dcel::VertexWrapper D = e.getPrevEdge().getSourceVertex();
-        if (D.is_infinite()) return false; // если D бесконечна — флип невозможен и не нужен, вроде как не очень возможна такая ситуация, но лишнем не будет
-
-        point_2 finiteSource = finite_edge.getSourceVertex().getGeometry();
-        point_2 finiteTarget = finite_edge.getNextEdge().getSourceVertex().getGeometry();
-        point_2 pd = D.getGeometry(); //противолежащая
-
-        return vector_s::vector_orientation(finiteSource, finiteTarget, pd) == vector_s::orientation::left;
-    }
-
-    // Оба конца ребра e — конечные
-    // Проверяем вершины twin-грани и противолежащую вершину на бесконечность.
+bool triangulation::delaunay_triangulation::isEdgeInvalid(dcel::EdgeWrapper e) { //если twin - существует, то существует соседняя грань полностью
     dcel::VertexWrapper e_target = e.getTwinEdge().getSourceVertex();
     dcel::VertexWrapper e_source = e.getSourceVertex();
-    dcel::VertexWrapper twin_opposite = e.getTwinEdge().getPrevEdge().getSourceVertex();
     dcel::VertexWrapper e_opposite   = e.getPrevEdge().getSourceVertex();
-
-    if (twin_opposite.is_infinite() || e_opposite.is_infinite()) //возможно не верно
+    dcel::VertexWrapper twin_opposite = e.getTwinEdge().getPrevEdge().getSourceVertex();
+    int inf_c = e_target.is_infinite() + e_source.is_infinite() + e_opposite.is_infinite();
+    if (inf_c >= 2)
         return false;
-
-    return vector_s::in_circle(
+    if (inf_c == 0)
+        return vector_s::in_circle(
             e_target.getGeometry(),
             e_source.getGeometry(),
             twin_opposite.getGeometry(),
-            e_opposite.getGeometry());
+            e_opposite.getGeometry()
+        );
+    if (!e_source.is_infinite() && !e_target.is_infinite() && (e_opposite.is_infinite() || twin_opposite.is_infinite()))
+        return false;
+
+    return true;
 }
 
 
@@ -135,7 +103,7 @@ triangulation::delaunay_triangulation::delaunay_triangulation(std::vector<point_
     }
     points = std::move(pts);
 
-    dcel::FaceWrapper root_face = dcel.init_dcel_with_big_inf_triangle(points[0]);
+    dcel::FaceWrapper root_face = dcel.init_dcel_with_big_inf_triangle(points[0], points.size());
 
     tree = delaunay_tree(root_face, points.size());
 
