@@ -8,9 +8,9 @@ dcel::VertexWrapper
 dcel::split_face(dcel::FaceWrapper faceWithPointOn, std::optional<dcel::EdgeWrapper> edgeWithPointOn, point_2 point) {
     if (edgeWithPointOn.has_value()) {
         //случай с попаданием на ребро
-        edge e3 = this->edges[edgeWithPointOn.value().getCurrentEdgeIndex()]; //e3, e4 - ребра на котороые попала точка, ребра по которым разделяются face0, face1
+        edge e3 = this->edges[edgeWithPointOn.value().edge_index]; //e3, e4 - ребра на котороые попала точка, ребра по которым разделяются face0, face1
         edge e4 = this->edges[e3.twin_edge_index];
-        size_t e3_index = edgeWithPointOn.value().getCurrentEdgeIndex(), e4_index = e3.twin_edge_index;
+        size_t e3_index = edgeWithPointOn.value().edge_index, e4_index = e3.twin_edge_index;
 
         //соответсвенно к e3 относиться к face0, а e4 относиться к face1
         face face0 = this->faces[e3.face_index];
@@ -183,8 +183,8 @@ dcel::split_face(dcel::FaceWrapper faceWithPointOn, std::optional<dcel::EdgeWrap
         return VertexWrapper(p_r_index, this);
     } else {
         //случай с попаданием внутрь грани
-        face face0 = this->faces[faceWithPointOn.getCurrentFaceIndex()];
-        size_t face0_index = faceWithPointOn.getCurrentFaceIndex();
+        face face0 = this->faces[faceWithPointOn.face_index];
+        size_t face0_index = faceWithPointOn.face_index;
         edge e0 = this->edges[face0.edge_index];
         edge e1 = this->edges[e0.next_edge_index];
         edge e2 = this->edges[e0.prev_edge_index];
@@ -340,44 +340,178 @@ void dcel::update_face_node_index(dcel::FaceWrapper face, size_t node_index) {
 }
 
 
-dcel::FaceWrapper dcel::init_dcel_with_big_inf_triangle(const point_2 &p0, size_t coordsSize) {
+std::vector<dcel::FaceWrapper> dcel::init_dcel_with_big_inf_triangle(size_t coordsSize) {
     this->coords.reserve(coordsSize);
-    this->edges.reserve(coordsSize);
-    this->vertexes.reserve(coordsSize);
+    this->edges.reserve(coordsSize * 5);
+    this->vertexes.reserve(coordsSize + 4);
     this->faces.reserve(coordsSize);
 
-    coords.push_back(p0);
+    size_t face0_index = 0, face1_index = 1, face2_index = 2, face3_index = 3;
+    size_t p_inf_index = 0, p_i_index = 1, p_j_index = 2, p_k_index = 3;
+    size_t e0_index = 0, e1_index = 1, e2_index = 2, e3_index = 3, e4_index = 4, e5_index = 5, e6_index = 6, e7_index =
+            7, e8_index = 8, e9_index = 9, e10_index = 10, e11_index = 11;
+    edge e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11;
+    {
+        e0.next_edge_index = e1_index;
+        e0.prev_edge_index = e2_index;
+        e0.twin_edge_index = e3_index;
+        e0.source_vertex_index = p_i_index;
+    }
 
-    const size_t inf_left_top_index = 0;
-    const size_t inf_right_bottom_index = 1;
-    const size_t p0_index = 2;
+    {
+        e1.next_edge_index = e2_index;
+        e1.prev_edge_index = e0_index;
+        e1.twin_edge_index = e5_index;
+        e1.source_vertex_index = p_j_index;
+    }
+
+    {
+        e2.next_edge_index = e0_index;
+        e2.prev_edge_index = e1_index;
+        e2.twin_edge_index = e4_index;
+        e2.source_vertex_index = p_k_index;
+    }
+
+    {
+        e3.next_edge_index = e6_index;
+        e3.prev_edge_index = e7_index;
+        e3.twin_edge_index = e0_index;
+        e3.source_vertex_index = p_j_index;
+    }
+
+    {
+        e4.next_edge_index = e11_index;
+        e4.prev_edge_index = e8_index;
+        e4.twin_edge_index = e2_index;
+        e4.source_vertex_index = p_i_index;
+    }
+
+    {
+        e5.next_edge_index = e9_index;
+        e5.prev_edge_index = e10_index;
+        e5.twin_edge_index = e1_index;
+        e5.source_vertex_index = p_k_index;
+    }
+
+    {
+        e6.next_edge_index = e7_index;
+        e6.prev_edge_index = e3_index;
+        e6.twin_edge_index = e8_index;
+        e6.source_vertex_index = p_i_index;
+    }
+
+    {
+        e7.next_edge_index = e3_index;
+        e7.prev_edge_index = e6_index;
+        e7.twin_edge_index = e9_index;
+        e7.source_vertex_index = p_inf_index;
+    }
+
+    {
+        e8.next_edge_index = e4_index;
+        e8.prev_edge_index = e11_index;
+        e8.twin_edge_index = e6_index;
+        e8.source_vertex_index = p_inf_index;
+    }
+
+    {
+        e9.next_edge_index = e10_index;
+        e9.prev_edge_index = e5_index;
+        e9.twin_edge_index = e7_index;
+        e9.source_vertex_index = p_j_index;
+    }
+
+    {
+        e10.next_edge_index = e5_index;
+        e10.prev_edge_index = e9_index;
+        e10.twin_edge_index = e11_index;
+        e10.source_vertex_index = p_inf_index;
+    }
+
+    {
+        e11.next_edge_index = e8_index;
+        e11.prev_edge_index = e4_index;
+        e11.twin_edge_index = e10_index;
+        e11.source_vertex_index = p_k_index;
+    }
+
+    //забъём face-ами
+    {
+        e0.face_index = face3_index;
+        e1.face_index = face3_index;
+        e2.face_index = face3_index;
+        e3.face_index = face0_index;
+        e4.face_index = face2_index;
+        e5.face_index = face1_index;
+        e6.face_index = face0_index;
+        e7.face_index = face0_index;
+        e8.face_index = face2_index;
+        e9.face_index = face1_index;
+        e10.face_index = face1_index;
+        e11.face_index = face2_index;
+    }
+
+    vertex p_i, p_j, p_k, p_inf;
+
+    this->coords.emplace_back(-Constants::super, -Constants::super); //p_i
+    this->coords.emplace_back(Constants::super, -Constants::super); //p_j
+    this->coords.emplace_back(0, Constants::super); //p_k
+    {
+        p_i.point_coords_index = 0;
+        p_i.random_edge_index = e0_index;
+    }
+    {
+        p_j.point_coords_index = 1;
+        p_j.random_edge_index = e1_index;
+    }
+    {
+        p_k.point_coords_index = 2;
+        p_k.random_edge_index = e2_index;
+    }
+    {
+        p_inf.point_coords_index = Constants::p_inf;
+        p_inf.random_edge_index = e7_index;
+    }
+
+    this->vertexes.push_back(p_inf);
+    this->vertexes.push_back(p_i);
+    this->vertexes.push_back(p_j);
+    this->vertexes.push_back(p_k);
+
+    face face0(e7_index, 0), face1(e10_index, 1), face2(e8_index, 2), face3(e0_index, 3);
 
 
-    vertexes.emplace_back(Constants::p_inf_left_top_index, 0); // 0 индекс исходящего ребра из верхней левой веришны
-    vertexes.emplace_back(Constants::p_inf_right_bottom_index, 1); // 1 индекс исходящего ребра из правой нижней веришны
-    vertexes.emplace_back(0, 2); // 2 индекс исходящего ребра из первой реально вершины (точки)
+    this->faces.push_back(face0);
+    this->faces.push_back(face1);
+    this->faces.push_back(face2);
+    this->faces.push_back(face3);
 
-    // создаём рёбра (обход: inf_left_top -> inf_right_bottom -> p0 -> inf_left_top)
-    const size_t e0_index = 0, e1_index = 1, e2_index = 2;
+    this->edges.push_back(e0);
+    this->edges.push_back(e1);
+    this->edges.push_back(e2);
+    this->edges.push_back(e3);
+    this->edges.push_back(e4);
+    this->edges.push_back(e5);
+    this->edges.push_back(e6);
+    this->edges.push_back(e7);
+    this->edges.push_back(e8);
+    this->edges.push_back(e9);
+    this->edges.push_back(e10);
+    this->edges.push_back(e11);
 
-    edges.emplace_back(e1_index, e2_index, Constants::invalid_twin_edge, inf_left_top_index, 0);
-    edges.emplace_back(e2_index, e0_index, Constants::invalid_twin_edge, inf_right_bottom_index, 0);
-    edges.emplace_back(e0_index, e1_index, Constants::invalid_twin_edge, p0_index, 0);
+    //так вот, возращаем список граней, возвращаем строго в том порядке в каком присвоили им индексы их нод!
 
-    faces.emplace_back(e0_index);
-    faces[0].node_index = 0;   // связь с корневым листом дерева (заранее чтобы потом не пробрасывать)
-
-    return FaceWrapper(0, this);
+    return {{face0_index, this}, {face1_index, this}, {face2_index, this}, {face3_index, this}};
 }
 
 
 dcel::EdgeWrapper dcel::flip_edge(EdgeWrapper p_i_p_j_edge) {
-    //короче, изнчально этот метод был legalize_edge но я потом понял что он не тут долежн быть, увы, так что тут теперь flip_edge и я надеюсь что он правильные, проверить!!!!!!!!
 
 
     //проинициализируем всё ребра входящие в ОБЕ!!! грани (face0 face1)
     edge e0 = this->edges[p_i_p_j_edge.edge_index];
-    edge e3 = this->edges[e0.twin_edge_index]; //twin ребра есть у всех, кроме трёх ребер входящих в изначальный треугольник, где реальные координаты только у точки p_0
+    edge e3 = this->edges[e0.twin_edge_index];
+    //twin ребра есть у всех, кроме трёх ребер входящих в изначальный треугольник, где реальные координаты только у точки p_0
     // и бесконечные у p_-1, p_-2, это нужно написать отдельно! (до этого иначе грохнется) хз можем ли мы попасть в flip_edge с ребром которое соединяет или две бесконечные или одну бесоконечную и конечную вершины
     size_t e0_index = p_i_p_j_edge.edge_index, e3_index = e0.twin_edge_index;
 
@@ -386,26 +520,28 @@ dcel::EdgeWrapper dcel::flip_edge(EdgeWrapper p_i_p_j_edge) {
     vertex p_i = this->vertexes[e0.source_vertex_index];
     vertex p_j = this->vertexes[this->edges[e0.next_edge_index].source_vertex_index]; // через следующее ребро
     vertex p_r = this->vertexes[this->edges[e0.prev_edge_index].source_vertex_index]; // через предыдущее ребро
-    vertex p_k = this->vertexes[this->edges[e3.prev_edge_index].source_vertex_index]; //в e3 входит ребро p_k p_j, у него source как раз и есть наша p_r
+    vertex p_k = this->vertexes[this->edges[e3.prev_edge_index].source_vertex_index];
+    //в e3 входит ребро p_k p_j, у него source как раз и есть наша p_r
     size_t p_i_index = e0.source_vertex_index, p_j_index = this->edges[e0.next_edge_index].source_vertex_index,
-            p_r_index = this->edges[e0.prev_edge_index].source_vertex_index, p_k_index = this->edges[e3.prev_edge_index].source_vertex_index;
+            p_r_index = this->edges[e0.prev_edge_index].source_vertex_index, p_k_index = this->edges[e3.prev_edge_index]
+                    .source_vertex_index;
 
-    if (p_r_index == p_k_index) {
-        std::cout << "pizdec";
-    }
 
     //доинициализируем все старые ребра
     edge e1 = this->edges[e0.next_edge_index];
     edge e2 = this->edges[e0.prev_edge_index];
     edge e4 = this->edges[e3.next_edge_index];
     edge e5 = this->edges[e3.prev_edge_index];
-    size_t e1_index = e0.next_edge_index, e2_index = e0.prev_edge_index, e4_index = e3.next_edge_index, e5_index = e3.prev_edge_index;
+    size_t e1_index = e0.next_edge_index, e2_index = e0.prev_edge_index, e4_index = e3.next_edge_index, e5_index = e3.
+            prev_edge_index;
 
     //создаём два новых ребра
     edge e6, e7;
-    size_t e6_index = e0_index, e7_index = e3_index; //индексы двух новосозданных соответствуют индкас двух удалённых, у e6 индекс e0, у e7 индекс e3 (и никак иначе)
+    size_t e6_index = e0_index, e7_index = e3_index;
+    //индексы двух новосозданных соответствуют индкас двух удалённых, у e6 индекс e0, у e7 индекс e3 (и никак иначе)
 
-    {//забиваем правильными параметрами e6
+    {
+        //забиваем правильными параметрами e6
         e6.next_edge_index = e5_index;
         e6.prev_edge_index = e1_index;
         e6.twin_edge_index = e7_index;
@@ -413,7 +549,8 @@ dcel::EdgeWrapper dcel::flip_edge(EdgeWrapper p_i_p_j_edge) {
         //дату как обычно не трогаем
     }
 
-    {//забиваем правильными параметрами e7
+    {
+        //забиваем правильными параметрами e7
         e7.next_edge_index = e2_index;
         e7.prev_edge_index = e4_index;
         e7.twin_edge_index = e6_index;
@@ -478,6 +615,8 @@ dcel::EdgeWrapper dcel::flip_edge(EdgeWrapper p_i_p_j_edge) {
 }
 
 
+
+
 std::vector<dcel::VertexWrapper> dcel::getVertexesInWrappers() {
     std::vector<dcel::VertexWrapper> wrappers;
     for (int i = 0; i < this->vertexes.size(); ++i) {
@@ -487,120 +626,149 @@ std::vector<dcel::VertexWrapper> dcel::getVertexesInWrappers() {
 }
 
 
-dto::TriangulationResult dcel::getTriangulationWithCorrectBoundary(const std::unordered_map<point_2, point_2> &boundary_vertexes_map) {
+dto::TriangulationResult dcel::getTriangulationWithCorrectBoundary(
+    const std::unordered_map<point_2, point_2> &boundary_vertexes_map) {
+    // std::vector<std::array<point_2, 3>> result;
+    //
+    // for (size_t fi = 0; fi < dcel_.faces.size(); ++fi) {
+    //     const auto& face = dcel_.faces[fi];
+    //     if (face.infinite || face.edge == INVALID) continue;
+    //
+    //     size_t v0, v1, v2;
+    //     dcel_.face_vertices(fi, v0, v1, v2);
+    //
+    //     if (dcel_.is_infinite_vertex(v0) || dcel_.is_infinite_vertex(v1) || dcel_.is_infinite_vertex(v2))
+    //         continue;
+    //
+    //     auto is_super = [](const point_2& q) {
+    //         return std::abs(q.getX()) >= SUPER * 0.9 || std::abs(q.getY()) >= SUPER * 0.9;
+    //     };
+    //
+    //     point_2 a = dcel_.vertices[v0].pos;
+    //     point_2 b = dcel_.vertices[v1].pos;
+    //     point_2 c = dcel_.vertices[v2].pos;
+    //
+    //     if (is_super(a) || is_super(b) || is_super(c)) continue;
+    //
+    //     result.push_back({a, b, c});
+    // }
+    // return result;
 
     std::vector<dto::TriangleFace> triangles;
+
     for (size_t i = 0; i < this->faces.size(); ++i) {
         dcel::FaceWrapper face = {i, this};
+        if (face.getEdge().getSourceVertex().is_infinite() || face.getEdge().getNextEdge().getSourceVertex().
+            is_infinite() || face.getEdge().getPrevEdge().getSourceVertex().is_infinite()) {
+            continue;
+        }
 
-        bool hasInfVertexes = false;
-        dcel::EdgeWrapper startEdge = face.getEdge();
-        dcel::EdgeWrapper iter = startEdge;
-        std::vector<size_t> vertexesCoordsIndexes;
-        do{
-            if (iter.getSourceVertex().is_infinite())
-                hasInfVertexes = true;
-            vertexesCoordsIndexes.push_back(this->vertexes[iter.getSourceVertex().vertex_index].point_coords_index);
-            iter = iter.getNextEdge();
-        }while(iter != startEdge);
+        auto is_super = [](const point_2 &q) {
+            return std::abs(q.getX()) >= Constants::super * 0.9 || std::abs(q.getY()) >= Constants::super * 0.9;
+        };
 
-        if (!hasInfVertexes)
-            triangles.push_back(vertexesCoordsIndexes);
+        dcel::VertexWrapper a = face.getEdge().getSourceVertex();
+        dcel::VertexWrapper b = face.getEdge().getNextEdge().getSourceVertex();
+        dcel::VertexWrapper c = face.getEdge().getPrevEdge().getSourceVertex();
+
+        if (is_super(a.getGeometry()) || is_super(b.getGeometry()) || is_super(c.getGeometry())) continue;
+
+        size_t a_coords_index = this->vertexes[a.vertex_index].point_coords_index;
+        size_t b_coords_index = this->vertexes[b.vertex_index].point_coords_index;
+        size_t c_coords_index = this->vertexes[c.vertex_index].point_coords_index;
+
+        triangles.emplace_back(a_coords_index, b_coords_index, c_coords_index);
     }
 
     return {this->coords, triangles};
 
 
-
-
-
-
-//    //сделаем обход граней, нужно найти все внешние грани
-//    std::queue<dcel::FaceWrapper> externalFaces;
-//    std::vector<bool> visitedFaces(this->faces.size(), false);
-//
-//    //две вершины с отрицательными индексами коориднат (бесконечные) всегда лежат на индексах 1 и 0 в векторе вершин.
-//    //индекс = 0
-//    for (dcel::EdgeWrapper edge : this->get_outgoing_edges(this->getVertexesInWrappers()[0])) {
-//        if (!visitedFaces[edge.getFace().getCurrentFaceIndex()]) {
-//            visitedFaces[edge.getFace().getCurrentFaceIndex()] = true;
-//            externalFaces.push(edge.getFace());
-//        }
-//        if (edge.hasValidTwin()) {
-//            if (!visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()]) {
-//                visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()] = true;
-//                externalFaces.push(edge.getTwinEdge().getFace());
-//            }
-//        }
-//    }
-//
-//    //индекс = 1
-//    for (dcel::EdgeWrapper edge : this->get_outgoing_edges(this->getVertexesInWrappers()[1])) {
-//        if (!visitedFaces[edge.getFace().getCurrentFaceIndex()]) {
-//            visitedFaces[edge.getFace().getCurrentFaceIndex()] = true;
-//            externalFaces.push(edge.getFace());
-//        }
-//        if (edge.hasValidTwin()) {
-//            if (!visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()]) {
-//                visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()] = true;
-//                externalFaces.push(edge.getTwinEdge().getFace());
-//            }
-//        }
-//    }
-//
-//    //запистим обход
-//    while (!externalFaces.empty()) {
-//        dcel::FaceWrapper face = externalFaces.front();
-//        externalFaces.pop();
-//        dcel::EdgeWrapper start_edge = face.getEdge();
-//        dcel::EdgeWrapper iter_edge = start_edge;
-//
-//        do {
-//            if (!iter_edge.getSourceVertex().is_infinite()) {
-//                point_2 sourceVertexCoords = iter_edge.getSourceVertex().getGeometry();
-//                point_2 targetVertexCoords = iter_edge.getNextEdge().getSourceVertex().getGeometry();
-//
-//                bool isBoundary = false;
-//
-//                if (boundary_vertexes_map.count(sourceVertexCoords) != 0  // прямое направление
-//                    && boundary_vertexes_map.at(sourceVertexCoords) == targetVertexCoords) {
-//                    isBoundary = true;
-//                } else if (boundary_vertexes_map.count(targetVertexCoords) != 0 // обратное направление
-//                           && boundary_vertexes_map.at(targetVertexCoords) == sourceVertexCoords) {
-//                    isBoundary = true;
-//                }
-//
-//                if (!isBoundary) {
-//                    dcel::EdgeWrapper iter_edge_twin = iter_edge.getTwinEdge();
-//                    if (!visitedFaces[iter_edge_twin.getFace().getCurrentFaceIndex()]) {
-//                        visitedFaces[iter_edge_twin.getFace().getCurrentFaceIndex()] = true;
-//                        externalFaces.push(iter_edge_twin.getFace());
-//                    }
-//                }
-//            }
-//            iter_edge = iter_edge.getNextEdge();
-//        } while (start_edge != iter_edge);
-//    }
-//
-//    std::vector<dcel::FaceWrapper> notVisitedFaces;
-//
-//    for (size_t i = 0; i < this->faces.size(); ++i) {
-//        if (!visitedFaces[i])
-//            notVisitedFaces.emplace_back(i, this);
-//    }
-//
-//    std::vector<dto::TriangleFace> triangles;
-//    triangles.reserve(notVisitedFaces.size());
-//    for (dcel::FaceWrapper face : notVisitedFaces) {
-//        std::vector<size_t> faceVertexCoordsIndexes;
-//        dcel::EdgeWrapper startEdge = face.getEdge();
-//        dcel::EdgeWrapper iter = startEdge;
-//        do{
-//            faceVertexCoordsIndexes.push_back(this->vertexes[iter.getSourceVertex().vertex_index].point_coords_index);
-//            iter = iter.getNextEdge();
-//        }while (iter!=startEdge);
-//        triangles.emplace_back(faceVertexCoordsIndexes);
-//    }
-//
-//    return {this->coords, triangles};
+    //    //сделаем обход граней, нужно найти все внешние грани
+    //    std::queue<dcel::FaceWrapper> externalFaces;
+    //    std::vector<bool> visitedFaces(this->faces.size(), false);
+    //
+    //    //две вершины с отрицательными индексами коориднат (бесконечные) всегда лежат на индексах 1 и 0 в векторе вершин.
+    //    //индекс = 0
+    //    for (dcel::EdgeWrapper edge : this->get_outgoing_edges(this->getVertexesInWrappers()[0])) {
+    //        if (!visitedFaces[edge.getFace().getCurrentFaceIndex()]) {
+    //            visitedFaces[edge.getFace().getCurrentFaceIndex()] = true;
+    //            externalFaces.push(edge.getFace());
+    //        }
+    //        if (edge.hasValidTwin()) {
+    //            if (!visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()]) {
+    //                visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()] = true;
+    //                externalFaces.push(edge.getTwinEdge().getFace());
+    //            }
+    //        }
+    //    }
+    //
+    //    //индекс = 1
+    //    for (dcel::EdgeWrapper edge : this->get_outgoing_edges(this->getVertexesInWrappers()[1])) {
+    //        if (!visitedFaces[edge.getFace().getCurrentFaceIndex()]) {
+    //            visitedFaces[edge.getFace().getCurrentFaceIndex()] = true;
+    //            externalFaces.push(edge.getFace());
+    //        }
+    //        if (edge.hasValidTwin()) {
+    //            if (!visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()]) {
+    //                visitedFaces[edge.getTwinEdge().getFace().getCurrentFaceIndex()] = true;
+    //                externalFaces.push(edge.getTwinEdge().getFace());
+    //            }
+    //        }
+    //    }
+    //
+    //    //запистим обход
+    //    while (!externalFaces.empty()) {
+    //        dcel::FaceWrapper face = externalFaces.front();
+    //        externalFaces.pop();
+    //        dcel::EdgeWrapper start_edge = face.getEdge();
+    //        dcel::EdgeWrapper iter_edge = start_edge;
+    //
+    //        do {
+    //            if (!iter_edge.getSourceVertex().is_infinite()) {
+    //                point_2 sourceVertexCoords = iter_edge.getSourceVertex().getGeometry();
+    //                point_2 targetVertexCoords = iter_edge.getNextEdge().getSourceVertex().getGeometry();
+    //
+    //                bool isBoundary = false;
+    //
+    //                if (boundary_vertexes_map.count(sourceVertexCoords) != 0  // прямое направление
+    //                    && boundary_vertexes_map.at(sourceVertexCoords) == targetVertexCoords) {
+    //                    isBoundary = true;
+    //                } else if (boundary_vertexes_map.count(targetVertexCoords) != 0 // обратное направление
+    //                           && boundary_vertexes_map.at(targetVertexCoords) == sourceVertexCoords) {
+    //                    isBoundary = true;
+    //                }
+    //
+    //                if (!isBoundary) {
+    //                    dcel::EdgeWrapper iter_edge_twin = iter_edge.getTwinEdge();
+    //                    if (!visitedFaces[iter_edge_twin.getFace().getCurrentFaceIndex()]) {
+    //                        visitedFaces[iter_edge_twin.getFace().getCurrentFaceIndex()] = true;
+    //                        externalFaces.push(iter_edge_twin.getFace());
+    //                    }
+    //                }
+    //            }
+    //            iter_edge = iter_edge.getNextEdge();
+    //        } while (start_edge != iter_edge);
+    //    }
+    //
+    //    std::vector<dcel::FaceWrapper> notVisitedFaces;
+    //
+    //    for (size_t i = 0; i < this->faces.size(); ++i) {
+    //        if (!visitedFaces[i])
+    //            notVisitedFaces.emplace_back(i, this);
+    //    }
+    //
+    //    std::vector<dto::TriangleFace> triangles;
+    //    triangles.reserve(notVisitedFaces.size());
+    //    for (dcel::FaceWrapper face : notVisitedFaces) {
+    //        std::vector<size_t> faceVertexCoordsIndexes;
+    //        dcel::EdgeWrapper startEdge = face.getEdge();
+    //        dcel::EdgeWrapper iter = startEdge;
+    //        do{
+    //            faceVertexCoordsIndexes.push_back(this->vertexes[iter.getSourceVertex().vertex_index].point_coords_index);
+    //            iter = iter.getNextEdge();
+    //        }while (iter!=startEdge);
+    //        triangles.emplace_back(faceVertexCoordsIndexes);
+    //    }
+    //
+    //    return {this->coords, triangles};
 }

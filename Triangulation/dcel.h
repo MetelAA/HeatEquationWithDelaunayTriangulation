@@ -16,6 +16,8 @@ private:
     public:
         vertex() {}
 
+        vertex(size_t pointCoordsIndex) {}
+
         vertex(size_t pointCoordsIndex, size_t randomEdgeIndex) : point_coords_index(pointCoordsIndex),
                                                                   random_edge_index(randomEdgeIndex)
         {}
@@ -46,7 +48,7 @@ private:
     public:
         face() {}
 
-        face(size_t edgeIndex) : edge_index(edgeIndex) {}
+        face(size_t edgeIndex, size_t nodeIndex) : edge_index(edgeIndex), node_index(nodeIndex) {}
 
         size_t edge_index; //индекс случайного (условно) ребра входящего в эту грань, через него можно найти все остальные
         size_t node_index; //индекс ноды из delaunay_tree в которую входит эта грань, даже фактически не ноды а листа
@@ -78,8 +80,7 @@ public:
         }
 
         bool is_infinite() const {
-            return dcel->vertexes[vertex_index].point_coords_index == Constants::p_inf_left_top_index ||
-                   dcel->vertexes[vertex_index].point_coords_index == Constants::p_inf_right_bottom_index;
+            return dcel->vertexes[vertex_index].point_coords_index == Constants::p_inf;
         }
 
         EdgeWrapper getEdge() const {
@@ -96,9 +97,6 @@ public:
 
 
     private:
-        size_t getCurrentVertexIndex() const {
-            return vertex_index;
-        }
 
         size_t vertex_index; // индекс вершины в vector vertexes которую оборачивает в этот wrapper
         dcel *dcel;
@@ -115,10 +113,6 @@ public:
 
         bool operator!=(const EdgeWrapper &other) const {
             return !(*this == other);
-        }
-
-        bool hasValidTwin() const {
-            return dcel->edges[edge_index].twin_edge_index != Constants::invalid_twin_edge;
         }
 
         EdgeWrapper getNextEdge() const {
@@ -148,10 +142,6 @@ public:
 
     private:
 
-        size_t getCurrentEdgeIndex() const{
-            return edge_index;
-        }
-
         size_t edge_index; // индекс ребра в vector vertexes которую оборачивает в этот wrapper
         dcel *dcel;
     };
@@ -171,10 +161,6 @@ public:
         }
 
     private:
-        size_t getCurrentFaceIndex() const {
-            return face_index;
-        }
-
         size_t face_index; // индекс грани в vector vertexes которую оборачивает в этот wrapper
         dcel *dcel;
     };
@@ -193,8 +179,7 @@ public:
 
     std::vector<EdgeWrapper> get_outgoing_edges(VertexWrapper v) const;
 
-    dcel::FaceWrapper init_dcel_with_big_inf_triangle(const point_2& p0, size_t coordsSize); //начальная точка, которая самая верхняя и самая правая из самых верхних, возращаем обёртку на первую вершину чтобы потом закинуть её корреткный node_index
-    //возвращаем корневую грань (первую), которая на двух бесконечных и одной конечной
+    std::vector<dcel::FaceWrapper> init_dcel_with_big_inf_triangle(size_t coordsSize);
 
     std::vector<dcel::VertexWrapper> getVertexesInWrappers();
     dto::TriangulationResult getTriangulationWithCorrectBoundary(const std::unordered_map<point_2, point_2>& boundary_vertexes_map);

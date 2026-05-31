@@ -30,9 +30,9 @@ namespace vector_s{
         double bdx = b.getX() - d.getX(), bdy = b.getY() - d.getY();
         double cdx = c.getX() - d.getX(), cdy = c.getY() - d.getY();
 
-        double a_sq = a.getX()*a.getX() + a.getY()*a.getY() - d.getX()*d.getX() - d.getY()*d.getY();
-        double b_sq = b.getX()*b.getX() + b.getY()*b.getY() - d.getX()*d.getX() - d.getY()*d.getY();
-        double c_sq = c.getX()*c.getX() + c.getY()*c.getY() - d.getX()*d.getX() - d.getY()*d.getY();
+        double a_sq = adx * adx + ady * ady;
+        double b_sq = bdx * bdx + bdy * bdy;
+        double c_sq = cdx * cdx + cdy * cdy;
 
         double det = adx * (bdy * c_sq - b_sq * cdy)
                      - ady * (bdx * c_sq - b_sq * cdx)

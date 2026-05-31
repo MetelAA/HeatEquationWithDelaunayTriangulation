@@ -39,10 +39,10 @@ int main() {
     std::vector<point_2> points = res.points;
 
     std::cout << points.size() << "\n";
-    std::cout << res.faces.size();
+    std::cout << res.faces.size() << "\n";
     for(dto::TriangleFace face : res.faces){
-        std::cout << "v1: x |" << points[face.v1_index].getX() << "|, y |" << points[face.v1_index].getY() << "; " << "v2: x |" << points[face.v2_index].getX() << "|, y |" << points[face.v2_index].getY() << "; "
-        << "v3: x |" << points[face.v3_index].getX() << "|, y |" << points[face.v3_index].getY() << "\n";
+        std::cout << "triangle: " << "v1: x |" << points[face.v1_index].getX() << "|, y |" << points[face.v1_index].getY() << "|; " << "v2: x |" << points[face.v2_index].getX() << "|, y |" << points[face.v2_index].getY() << "|; "
+        << "v3: x |" << points[face.v3_index].getX() << "|, y |" << points[face.v3_index].getY() << "|\n";
     }
 
 

@@ -3,4 +3,4 @@ project(HeatEquationWithDelaunayTriangulation)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Debug)
-add_executable(HeatEquationWithDelaunayTriangulation main.cpp Triangulation/point_2.h Triangulation/vector_stuff.h Triangulation/dcel.cpp Triangulation/dcel.h Triangulation/delaunay_tree.cpp Triangulation/delaunay_tree.h Triangulation/delaunay_triangulation.cpp Triangulation/delaunay_triangulation.h Triangulation/magic_constants.h FiniteElementMethod/FiniteElementMethodHeatEquation.cpp FiniteElementMethod/FiniteElementMethodHeatEquation.h Triangulation/dto.h)
+add_executable(HeatEquationWithDelaunayTriangulation main.cpp Triangulation/point_2.h Triangulation/vector_stuff.h Triangulation/DCEL.cpp Triangulation/DCEL.h Triangulation/delaunay_tree.cpp Triangulation/delaunay_tree.h Triangulation/delaunay_triangulation.cpp Triangulation/delaunay_triangulation.h Triangulation/magic_constants.h FiniteElementMethod/FiniteElementMethodHeatEquation.cpp FiniteElementMethod/FiniteElementMethodHeatEquation.h Triangulation/dto.h)
