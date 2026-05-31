@@ -4,11 +4,15 @@
 
 #include <iostream>
 
+
 dcel::VertexWrapper
-dcel::split_face(dcel::FaceWrapper faceWithPointOn, std::optional<dcel::EdgeWrapper> edgeWithPointOn, point_2 point) {
+dcel::split_face(dcel::FaceWrapper faceWithPointOn,
+                 std::optional<dcel::EdgeWrapper> edgeWithPointOn,
+                 point_2 point) {
     if (edgeWithPointOn.has_value()) {
         //случай с попаданием на ребро
-        edge e3 = this->edges[edgeWithPointOn.value().edge_index]; //e3, e4 - ребра на котороые попала точка, ребра по которым разделяются face0, face1
+        edge e3 = this->edges[edgeWithPointOn.value().edge_index];
+        //e3, e4 - ребра на котороые попала точка, ребра по которым разделяются face0, face1
         edge e4 = this->edges[e3.twin_edge_index];
         size_t e3_index = edgeWithPointOn.value().edge_index, e4_index = e3.twin_edge_index;
 
@@ -25,14 +29,16 @@ dcel::split_face(dcel::FaceWrapper faceWithPointOn, std::optional<dcel::EdgeWrap
         edge e5 = this->edges[e4.next_edge_index];
         edge e6 = this->edges[e4.prev_edge_index];
 
-        size_t e1_index = e3.next_edge_index, e2_index = e3.prev_edge_index, e5_index = e4.next_edge_index, e6_index = e4.prev_edge_index;
+        size_t e1_index = e3.next_edge_index, e2_index = e3.prev_edge_index, e5_index = e4.next_edge_index, e6_index =
+                e4.prev_edge_index;
 
         //подтащим текущие точки
         vertex p_i = this->vertexes[e1.source_vertex_index];
         vertex p_j = this->vertexes[e2.source_vertex_index];
         vertex p_k = this->vertexes[e5.source_vertex_index];
         vertex p_l = this->vertexes[e6.source_vertex_index];
-        size_t p_i_index = e1.source_vertex_index, p_j_index = e2.source_vertex_index, p_k_index = e5.source_vertex_index, p_l_index = e6.source_vertex_index;
+        size_t p_i_index = e1.source_vertex_index, p_j_index = e2.source_vertex_index, p_k_index = e5.
+                source_vertex_index, p_l_index = e6.source_vertex_index;
 
         //создадим новую точку p_r
         vertex p_r;
@@ -42,143 +48,141 @@ dcel::split_face(dcel::FaceWrapper faceWithPointOn, std::optional<dcel::EdgeWrap
 
         //создаём все новые ребра, чёт много конечно((((
 
-        edge e7, e8, e9, e10, e11, e12, e13, e14;
+        edge e7, e8, e9, e10, e11, e12;
         size_t edge_number = this->edges.size() - 1;
-        size_t e7_index = e3_index, e8_index = e4_index; //переиспользуем старые индексы в векторе ребер от e3 и e4
-        size_t e9_index = edge_number + 1, e10_index = edge_number + 2, e11_index = edge_number + 3,
-                e12_index = edge_number + 4, e13_index = edge_number + 5, e14_index = edge_number + 6;
+        size_t e7_index = edge_number + 1, e8_index = edge_number + 2, e9_index = edge_number + 3,
+                e10_index = edge_number + 4, e11_index = edge_number + 5, e12_index = edge_number + 6;
 
-        { // заполняем актуальные данные для e7
-            e7.next_edge_index = e8_index;
-            e7.prev_edge_index = e1_index;
-            e7.twin_edge_index = e10_index;
-            e7.source_vertex_index = p_j_index;
-            //face (грани) тоже пока не заполянем
-            //дату не заполняем (data)
+        {
+            // заполняем e7
+            e7.source_vertex_index = p_r_index;
+            e7.twin_edge_index = e3_index;
+            e7.next_edge_index = e5_index;
+            e7.prev_edge_index = e12_index;
         }
 
-        { // заполняем актуальные данные для e8
-            e8.next_edge_index = e1_index;
-            e8.prev_edge_index = e7_index;
-            e8.twin_edge_index = e14_index;
+        {
+            // заполняем актуальные данные для e8
             e8.source_vertex_index = p_r_index;
+            e8.twin_edge_index = e4_index;
+            e8.next_edge_index = e1_index;
+            e8.prev_edge_index = e10_index;
         }
 
-        { // заполняем актуальные данные для e9
-            e9.next_edge_index = e10_index;
-            e9.prev_edge_index = e2_index;
-            e9.twin_edge_index = e12_index;
-            e9.source_vertex_index = p_k_index;
+        {
+            e9.source_vertex_index = p_r_index;
+            e9.twin_edge_index = e10_index;
+            e9.next_edge_index = e2_index;
+            e9.prev_edge_index = e3_index;
         }
 
-        { // заполняем актуальные данные для e10
-            e10.next_edge_index = e2_index;
-            e10.prev_edge_index = e9_index;
-            e10.twin_edge_index = e7_index;
-            e10.source_vertex_index = p_r_index;
+        {
+            e10.source_vertex_index = p_j_index;
+            e10.twin_edge_index = e9_index;
+            e10.next_edge_index = e8_index;
+            e10.prev_edge_index = e1_index;
         }
 
-        { // заполняем актуальные данные для e11
-            e11.next_edge_index = e12_index;
-            e11.prev_edge_index = e5_index;
-            e11.twin_edge_index = e13_index;
-            e11.source_vertex_index = p_l_index;
+        {
+            e11.source_vertex_index = p_r_index;
+            e11.twin_edge_index = e12_index;
+            e11.next_edge_index = e6_index;
+            e11.prev_edge_index = e4_index;
         }
 
-        { // заполняем актуальные данные для e12
-            e12.next_edge_index = e5_index;
-            e12.prev_edge_index = e11_index;
-            e12.twin_edge_index = e9_index;
-            e12.source_vertex_index = p_r_index;
+        {
+            e12.source_vertex_index = p_l_index;
+            e12.twin_edge_index = e11_index;
+            e12.next_edge_index = e7_index;
+            e12.prev_edge_index = e5_index;
         }
 
-        { // заполняем актуальные данные для e13
-            e13.next_edge_index = e6_index;
-            e13.prev_edge_index = e14_index;
-            e13.twin_edge_index = e11_index;
-            e13.source_vertex_index = p_r_index;
+        {
+            //изменим актульные данные для e3. Не меняется только source
+            e3.twin_edge_index = e7_index;
+            e3.next_edge_index = e9_index;
+            e3.prev_edge_index = e2_index;
         }
 
-        { // заполняем актуальные данные для e14
-            e14.next_edge_index = e13_index;
-            e14.prev_edge_index = e6_index;
-            e14.twin_edge_index = e8_index;
-            e14.source_vertex_index = p_i_index;
+        {
+            //изменим актульные данные для e4. Не меняется только source
+            e4.twin_edge_index = e8_index;
+            e4.next_edge_index = e11_index;
+            e4.prev_edge_index = e6_index;
         }
 
-        {//изменим prev/next на акутальные для новых граней у старых ребер, изменим у e1
-            e1.next_edge_index = e7_index;
+        {
+            //изменим prev/next на акутальные для новых граней у старых ребер, изменим у e1
+            e1.next_edge_index = e10_index;
             e1.prev_edge_index = e8_index;
         }
 
-        {//изменим prev/next на акутальные для новых граней у старых ребер, изменим у e2
-            e2.next_edge_index = e9_index;
-            e2.prev_edge_index = e10_index;
-        }
-
-        {//изменим prev/next на акутальные для новых граней у старых ребер, изменим у e5
-            e5.next_edge_index = e11_index;
-            e5.prev_edge_index = e12_index;
-        }
-
-        {//изменим prev/next на акутальные для новых граней у старых ребер, изменим у e6
-            e6.next_edge_index = e14_index;
-            e6.prev_edge_index = e13_index;
-        }
-        //e3, e4 будут удалены так что у них ничего менять не надо
-
-        //добавим новые грани, face2, face3, face4, face5 которые образуют новые ребра, т.к. face0, face1 удаляем, то их индексы переназначим face2 и face3 соответсвенно
-        face face2, face3, face4, face5;
-        size_t face_number = this->faces.size() - 1;
-
-        size_t face2_index = face0_index, face3_index = face1_index, face4_index = face_number + 1, face5_index =
-                face_number + 2;
-
-        //заполняем данными, на дату (data) такде плевать
-        face2.edge_index = e1_index;
-        face3.edge_index = e2_index;
-        face4.edge_index = e5_index;
-        face5.edge_index = e6_index;
-
-        //заполняем индексы граней на ребрах (всех), ну кроме удалённых e3, e4
         {
-            e1.face_index = face2_index;
-            e2.face_index = face3_index;
-            e5.face_index = face4_index;
-            e6.face_index = face5_index;
-            e7.face_index = face2_index;
-            e8.face_index = face2_index;
-            e9.face_index = face3_index;
-            e10.face_index = face3_index;
-            e11.face_index = face4_index;
-            e12.face_index = face4_index;
-            e13.face_index = face5_index;
-            e14.face_index = face5_index;
+            //изменим prev/next на акутальные для новых граней у старых ребер, изменим у e2
+            e2.next_edge_index = e3_index;
+            e2.prev_edge_index = e9_index;
         }
 
-        p_r.random_edge_index = e8_index; //закидываем случайный номер исходяшего ребра в новую вершину
+        {
+            //изменим prev/next на акутальные для новых граней у старых ребер, изменим у e5
+            e5.next_edge_index = e12_index;
+            e5.prev_edge_index = e7_index;
+        }
 
-        //обновим в старых вершинах исходящие ребра во избежание указания на удалённое ребро (его могло заменить ребро которое не исходит из этой вершины)
-        //на границе раздела face0 и face1 лежат две точки p_i, p_k
-        this->vertexes[p_i_index].random_edge_index = e14_index;
-        this->vertexes[p_k_index].random_edge_index = e9_index;
+        {
+            //изменим prev/next на акутальные для новых граней у старых ребер, изменим у e6
+            e6.next_edge_index = e4_index;
+            e6.prev_edge_index = e11_index;
+        }
 
-        this->edges[e3_index] = e7;
-        this->edges[e4_index] = e8; //закинули по теми же индексами
+        face0.edge_index = e3_index;
+        face1.edge_index = e4_index;
+        size_t face_number = this->faces.size();
+        size_t new_face1_index = face_number, new_face2_index = face_number + 1;
+        face new_face1, new_face2;
+        new_face1.edge_index = e8_index;
+        new_face2.edge_index = e7_index;
+
+        {
+            e1.face_index = new_face1_index;
+            e2.face_index = face0_index;
+            e3.face_index = face0_index;
+            e4.face_index = face1_index;
+            e5.face_index = new_face2_index;
+            e6.face_index = face1_index;
+            e7.face_index = new_face2_index;
+            e8.face_index = new_face1_index;
+            e9.face_index = face0_index;
+            e10.face_index = new_face1_index;
+            e11.face_index = face1_index;
+            e12.face_index = new_face2_index;
+        }
+        p_r.random_edge_index = e7_index;
+
+
+        this->edges[e1_index] = e1;
+        this->edges[e2_index] = e2;
+        this->edges[e3_index] = e3;
+        this->edges[e4_index] = e4;
+        this->edges[e5_index] = e5;
+        this->edges[e6_index] = e6;
+
+
+        this->edges.push_back(e7);
+        this->edges.push_back(e8);
         this->edges.push_back(e9);
         this->edges.push_back(e10);
         this->edges.push_back(e11);
         this->edges.push_back(e12);
-        this->edges.push_back(e13);
-        this->edges.push_back(e14);
+
 
         this->vertexes.push_back(p_r);
 
-        this->faces[face0_index] = face2;
-        this->faces[face1_index] = face3;
-        this->faces.push_back(face4);
-        this->faces.push_back(face5);
 
+        this->faces[face0_index] = face0;
+        this->faces[face1_index] = face1;
+        this->faces.push_back(new_face1);
+        this->faces.push_back(new_face2);
 
         return VertexWrapper(p_r_index, this);
     } else {
@@ -192,7 +196,8 @@ dcel::split_face(dcel::FaceWrapper faceWithPointOn, std::optional<dcel::EdgeWrap
         vertex p_i = this->vertexes[e0.source_vertex_index];
         vertex p_j = this->vertexes[e1.source_vertex_index];
         vertex p_k = this->vertexes[e2.source_vertex_index];
-        size_t p_i_index = e0.source_vertex_index, p_j_index = e1.source_vertex_index, p_k_index = e2.source_vertex_index;
+        size_t p_i_index = e0.source_vertex_index, p_j_index = e1.source_vertex_index, p_k_index = e2.
+                source_vertex_index;
 
         //добавляем новую веришну p_r
         vertex p_r;
@@ -206,7 +211,8 @@ dcel::split_face(dcel::FaceWrapper faceWithPointOn, std::optional<dcel::EdgeWrap
                 edge_number + 4, e7_index = edge_number + 5, e8_index = edge_number + 6;
         edge e3, e4, e5, e6, e7, e8;
 
-        { // заполняем актуальные данные для e3
+        {
+            // заполняем актуальные данные для e3
             e3.next_edge_index = e4_index;
             e3.prev_edge_index = e0_index;
             e3.twin_edge_index = e8_index;
@@ -215,52 +221,60 @@ dcel::split_face(dcel::FaceWrapper faceWithPointOn, std::optional<dcel::EdgeWrap
             //дату не заполняем (data)
         }
 
-        { // заполняем актуальные данные для e4
+        {
+            // заполняем актуальные данные для e4
             e4.next_edge_index = e0_index;
             e4.prev_edge_index = e3_index;
             e4.twin_edge_index = e5_index;
             e4.source_vertex_index = p_r_index;
         }
 
-        {// заполняем актуальные данные для e5
+        {
+            // заполняем актуальные данные для e5
             e5.next_edge_index = e6_index;
             e5.prev_edge_index = e2_index;
             e5.twin_edge_index = e4_index;
             e5.source_vertex_index = p_i_index;
         }
 
-        {// заполняем актуальные данные для e6
+        {
+            // заполняем актуальные данные для e6
             e6.next_edge_index = e2_index;
             e6.prev_edge_index = e5_index;
             e6.twin_edge_index = e7_index;
             e6.source_vertex_index = p_r_index;
         }
 
-        {// заполняем актуальные данные для e7
+        {
+            // заполняем актуальные данные для e7
             e7.next_edge_index = e8_index;
             e7.prev_edge_index = e1_index;
             e7.twin_edge_index = e6_index;
             e7.source_vertex_index = p_k_index;
         }
 
-        {// заполняем актуальные данные для e8
+        {
+            // заполняем актуальные данные для e8
             e8.next_edge_index = e1_index;
             e8.prev_edge_index = e7_index;
             e8.twin_edge_index = e3_index;
             e8.source_vertex_index = p_r_index;
         }
 
-        { //изменяем next/prev у e0
+        {
+            //изменяем next/prev у e0
             e0.next_edge_index = e3_index;
             e0.prev_edge_index = e4_index;
         }
 
-        {//изменяем next/prev у e1
+        {
+            //изменяем next/prev у e1
             e1.next_edge_index = e7_index;
             e1.prev_edge_index = e8_index;
         }
 
-        {//изменяем next/prev у e2
+        {
+            //изменяем next/prev у e2
             e2.next_edge_index = e5_index;
             e2.prev_edge_index = e6_index;
         }
@@ -275,7 +289,8 @@ dcel::split_face(dcel::FaceWrapper faceWithPointOn, std::optional<dcel::EdgeWrap
         face3.edge_index = e1_index;
 
 
-        { //заполняем индексы граней на ребрах
+        {
+            //заполняем индексы граней на ребрах
             e0.face_index = face1_index;
             e1.face_index = face3_index;
             e2.face_index = face2_index;
@@ -307,9 +322,8 @@ dcel::split_face(dcel::FaceWrapper faceWithPointOn, std::optional<dcel::EdgeWrap
 
         return VertexWrapper(p_r_index, this);
     }
-
-
 }
+
 
 std::vector<dcel::FaceWrapper> dcel::get_incident_faces(dcel::VertexWrapper v) const {
     std::vector<FaceWrapper> incident_faces;
@@ -506,8 +520,6 @@ std::vector<dcel::FaceWrapper> dcel::init_dcel_with_big_inf_triangle(size_t coor
 
 
 dcel::EdgeWrapper dcel::flip_edge(EdgeWrapper p_i_p_j_edge) {
-
-
     //проинициализируем всё ребра входящие в ОБЕ!!! грани (face0 face1)
     edge e0 = this->edges[p_i_p_j_edge.edge_index];
     edge e3 = this->edges[e0.twin_edge_index];
@@ -613,8 +625,6 @@ dcel::EdgeWrapper dcel::flip_edge(EdgeWrapper p_i_p_j_edge) {
     return EdgeWrapper(p_i_p_j_edge.edge_index,
                        this); //он типо даже так то не поменялся, но для корректности лучше вернуть новый
 }
-
-
 
 
 std::vector<dcel::VertexWrapper> dcel::getVertexesInWrappers() {
