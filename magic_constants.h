@@ -14,8 +14,14 @@ namespace Constants{
     static const int harmonicCountInNonStationarySeries = 20; //число гармоник в нестационарной части ур-я, от него зависит кол-во C_mn = harmonicCountInNonStationarySeries^2
     static const int quadraturePoints = 30;
     static const double PI = 3.14159265358979323846;
-    static const double writePerSecond = 0.05; //ровно столько раз за секунду будем записывать результат в память, столько же раз в секунду считаем аналитику
+    static const double writePerSecond = 0.1; //ровно столько раз за секунду будем записывать результат в память, столько же раз в секунду считаем аналитику
     static const std::string numericResultFile = "num_result.bin";
+
+    static const std::string plotsDirLocation = "../Plots/";//надо будет подогнать когда в qt буду, тут до plots одна папка, там немало
+    static const std::string maxDiffPlotFile = plotsDirLocation+"max_diff.plot";
+    static const std::string maxDiffPlotDataFile = plotsDirLocation+"max_diff_data.txt";
+    static const std::string avgQuadDiffPlotFile = plotsDirLocation+"avg_quad_diff.plot";
+    static const std::string avgQuadDiffDataFile = plotsDirLocation+"avg_quad_diff_data.txt";
 }
 
 #endif

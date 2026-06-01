@@ -3,6 +3,7 @@
 #include "AnalyticalSolution/AnalyticalSolution.h"
 #include "NumericSolution/NumericSolution.h"
 #include "ReadWriteFiles/cereal_f.h"
+#include "ReadWriteFiles/DataWriterForPlots.h"
 
 class SolutionController {
 public:
@@ -17,8 +18,9 @@ public:
         std::vector<DTO::StepResultAndInfoForWrite> numStepsResults;
         std::vector<DTO::StepResultAndInfoForWrite> analyticalStepsResults;
 
+        std::vector<double> writesTimes; //будем записывать в какое время проводили записи, по хорошему уже в отдельную структуру вынести надо
         std::vector<double> maxDiff; //будем считать max разницу между ЧИСЛЕННЫМ и аналитическим. т.е. численный-аналитический
-        std::vector<double> RMSDiff; //яндекс говорит что RMS difference = Среднеквадратическая разница...
+        std::vector<double> avgQuadDiff; // Среднеквадратическая разница
 
         long steps = 0;
         int frames = 1;
@@ -26,6 +28,11 @@ public:
             DTO::HeatEquationStepResult zeroFrame = numeric_solution.getZeroFrame();
             numStepsResults.push_back(DTO::StepResultAndInfoForWrite(zeroFrame, 0, 0));
             analyticalStepsResults.push_back(DTO::StepResultAndInfoForWrite(zeroFrame, 0, 0));
+
+            //тут же посчитаем в момент времени t=0
+            writesTimes.push_back(0);
+            maxDiff.push_back(getMaxDifference(zeroFrame.points, zeroFrame.points));
+            avgQuadDiff.push_back(getRMSDifference(zeroFrame.points, zeroFrame.points));
         }
 
 
@@ -37,8 +44,9 @@ public:
                 numStepsResults.emplace_back(numStepResult, numeric_solution.getCurrentTime(), frames);
                 analyticalStepsResults.emplace_back(analyticalStepResult, numeric_solution.getCurrentTime(), frames);
 
+                writesTimes.push_back(numeric_solution.getCurrentTime());
                 maxDiff.push_back(getMaxDifference(numStepResult.points, analyticalStepResult.points));
-                RMSDiff.push_back(getRMSDifference(numStepResult.points, analyticalStepResult.points));
+                avgQuadDiff.push_back(getRMSDifference(numStepResult.points, analyticalStepResult.points));
                 frames++;
             }
             steps++;
@@ -57,10 +65,15 @@ public:
         }
 
         DTO::AllDataResult allDataNumResult(plateParams.width, plateParams.height, maxT, minT, frames, experimentTime, dt, numStepsResults);
-        DTO::AllDataResult allDataAnalyticalResult(plateParams.width, plateParams.height, maxT, minT, frames, experimentTime, dt, analyticalStepsResults);
+        // DTO::AllDataResult allDataAnalyticalResult(plateParams.width, plateParams.height, maxT, minT, frames, experimentTime, dt, analyticalStepsResults); //никуда не пишем, пусть пока будет, мб куда-то приделаю
 
+        //запишем графики сначала
+        DataWriter::writeTwoColumns(Constants::maxDiffPlotDataFile, writesTimes, maxDiff);
+        DataWriter::writeTwoColumns(Constants::avgQuadDiffDataFile, writesTimes, avgQuadDiff);
+
+        //пишем полезные тепловые карты в бинарники, можно трайнуть вывести аналитику, но как будто всё ляжет
         cereal_f::writeToFile(allDataNumResult, Constants::numericResultFile);
-        cereal_f::writeToFile(allDataAnalyticalResult, "analytical_result.bin");
+        // cereal_f::writeToFile(allDataAnalyticalResult, "analytical_result.bin");
     }
 
 private:

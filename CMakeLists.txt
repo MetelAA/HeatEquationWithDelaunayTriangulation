@@ -41,6 +41,7 @@ add_executable(HeatEquationWithDelaunayTriangulation
         AnalyticalSolution/AnalyticalSolution.cpp
         AnalyticalSolution/AnalyticalSolution.h
         ReadWriteFiles/cereal_f.h
+        ReadWriteFiles/DataWriterForPlots.h
 )
 
 target_link_libraries(HeatEquationWithDelaunayTriangulation PRIVATE cereal)

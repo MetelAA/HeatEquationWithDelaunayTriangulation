@@ -1,4 +1,6 @@
+#include <chrono>
 #include <iostream>
+#include <thread>
 
 #include "SolutionController.h"
 
@@ -44,9 +46,17 @@ int main() {
 
 
     DTO::TemperatureInitValues tInit(20, 40, 60, 80, 100);
-    DTO::PlateParams params(0.5, 0.5, 9.71e-5, tInit);
-    SolutionController controller(500, params, 0.05, 500);
-
+    DTO::PlateParams params(0.1, 0.1, 9.71e-5, tInit);
+    SolutionController controller(500, params, 0.05, 1000);
+    {
+        std::string command = "start /B gnuplot " + Constants::maxDiffPlotFile;
+        std::system(command.c_str());
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    {
+        std::string command = "start /B gnuplot " + Constants::avgQuadDiffPlotFile;
+        std::system(command.c_str());
+    }
 
 
 }
