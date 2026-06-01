@@ -4,7 +4,7 @@
 
 FiniteElementMethodHeatEquation::FiniteElementMethodHeatEquation(const std::vector<Point_2> &points,
                                                                  const std::vector<DTO::TriangleFace> &trFaces,
-                                                                 const std::vector<DTO::BoundaryNode> &boundaryNodes,
+                                                                 const std::vector<BoundaryNode> &boundaryNodes,
                                                                  double initTemperature, double dt,
                                                                  double thermalConductivityCoefficient) {
     //в этот конструктор попадают уже только внутренние грани, т.е. отсеяные от того что лишним образом натреагулировали
@@ -81,7 +81,7 @@ FiniteElementMethodHeatEquation::FiniteElementMethodHeatEquation(const std::vect
     std::vector<std::vector<double>> A_mod = A;
 
     //введём условия Дирихле, т.е. обнулим строки/столбцы для граничных нод
-    for(DTO::BoundaryNode boundary : boundaryNodes){
+    for(BoundaryNode boundary : boundaryNodes){
         for (int i = 0; i < A_mod.size(); ++i) {
             bool isDiagonalElement = i == boundary.node_index;
             A_mod[i][boundary.node_index] = isDiagonalElement;
@@ -117,13 +117,12 @@ FiniteElementMethodHeatEquation::FiniteElementMethodHeatEquation(const std::vect
     }
 
     std::vector<bool> isBoundary(points.size(), false);
-    for(DTO::BoundaryNode boundary : boundaryNodes){
+    for(BoundaryNode boundary : boundaryNodes){
         nodeTemperatures[boundary.node_index] = boundary.temp;
         isBoundary[boundary.node_index] = true;
     }
 
     nodes = Nodes(points, nodeTemperatures, isBoundary);
-    this->faces = trFaces;
     curTime = 0;
 }
 
@@ -131,7 +130,7 @@ void FiniteElementMethodHeatEquation::step() {
     std::vector<double> b(this->nodes.getNodesSize()); //вектор правой стороны СЛАУ
     for (int i = 0; i < this->nodes.getNodesSize(); ++i) {
         //умножаем матрицу M (n*n) на вектора температур (n*1)
-        double  right_element = 0;
+        double right_element = 0;
         for (int j = 0; j < this->nodes.getNodesSize(); ++j) {
             right_element += M[i][j] * nodes.getNode(j).temp;
         }
@@ -139,13 +138,14 @@ void FiniteElementMethodHeatEquation::step() {
     }
 
     //учтём граничные условия (корректируем правую часть)
-    for(size_t boundaryNodeIndex : this->nodes.getBoundaryNodesIndexes()){
+    for (size_t boundaryNodeIndex : this->nodes.getBoundaryNodesIndexes()) {
+        double Tb = this->nodes.getNode(boundaryNodeIndex).temp;
         for (int i = 0; i < this->nodes.getNodesSize(); ++i) {
-            if (i!=boundaryNodeIndex)
-                b[i] -= A[i][boundaryNodeIndex] * this->nodes.getNode(boundaryNodeIndex).temp; //немного бесит что мы A храним для использования только здесь, тк на L и L транспонированное разложили ещё во время инициализации
-            else
-                b[i] = this->nodes.getNode(boundaryNodeIndex).temp; // вроде как бесолезно, оно вроде ещё в первом цикле инициализации уже такое
+            b[i] -= A[i][boundaryNodeIndex] * Tb;
         }
+    }
+    for (size_t boundaryNodeIndex : this->nodes.getBoundaryNodesIndexes()) {
+        b[boundaryNodeIndex] = this->nodes.getNode(boundaryNodeIndex).temp;
     }
 
     //переходим к первому этапу разложения Холецкого Ly=b, ищем вектор y-ков, пользуемся что L - нижнетреугольная
@@ -176,10 +176,6 @@ void FiniteElementMethodHeatEquation::step() {
 
 double FiniteElementMethodHeatEquation::getCurrentTime() const {
     return curTime;
-}
-
-const std::vector<DTO::TriangleFace> & FiniteElementMethodHeatEquation::getTriangleFaces() const {
-    return this->faces;
 }
 
 const FiniteElementMethodHeatEquation::Nodes & FiniteElementMethodHeatEquation::getNodesDataAccessInterface() const {

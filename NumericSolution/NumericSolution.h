@@ -5,22 +5,26 @@
 #include <vector>
 
 #include "FiniteElementMethod/FiniteElementMethodHeatEquation.h"
-#include "../Triangulation/DTO.h"
+#include "../DTO.h"
 #include "../Triangulation/Point_2.h"
 #include "FiniteElementMethod/FiniteElementMethodHeatEquation.h"
 
 class NumericSolution {
 public:
+    NumericSolution(int vertex_count, const DTO::PlateParams& plateParams, double dt);
 
-
-    NumericSolution(int vertex_count, double thermalConductivityСoefficient, double width, double height, //width и height даётся в метрах, так же как и все остальные физически величины даются в системе СИ
-    DTO::TemperatureInitValues tInit, double dt, double experimentTime
-    );
+    const std::vector<Point_2>& getPoints() const;
+    const std::vector<DTO::TriangleFace>& getFaces() const;
+    DTO::HeatEquationStepResult step();
+    double getCurrentTime() const;
+    DTO::HeatEquationStepResult getZeroFrame() const;
 
 private:
     std::vector<Point_2> points;
+    std::vector<DTO::TriangleFace> faces;
     FiniteElementMethodHeatEquation heatEquation;
-
+    double height, width, thermalConductivityCoefficient;
+    DTO::TemperatureInitValues tInit;
 
 };
 

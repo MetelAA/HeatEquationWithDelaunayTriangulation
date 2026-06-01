@@ -8,7 +8,7 @@
 #include <cmath>
 #include "../../Triangulation/Point_2.h"
 #include "../../Triangulation/DCEL.h"
-#include "../../Triangulation/DTO.h"
+#include "../../DTO.h"
 
 class FiniteElementMethodHeatEquation {
 public:
@@ -19,7 +19,14 @@ public:
         bool isBoundary;
     };
 
-    class Nodes{
+    struct BoundaryNode {
+        size_t node_index; // индекс точки в передаваемом векторе координат
+        double temp; // температура границы
+
+        BoundaryNode(size_t nodeIndex, double temp) : node_index(nodeIndex), temp(temp) {}
+    };
+
+    class Nodes{ //класс nodes сохраняет порядок как был в векторе points, т.е. индекс вершин в треугольниках в векторе faces остаются валидными!
     public:
         Nodes() {}
 
@@ -63,7 +70,7 @@ public:
 
     FiniteElementMethodHeatEquation(const std::vector<Point_2>& points,
                                     const std::vector<DTO::TriangleFace>& trFaces,
-                                    const std::vector<DTO::BoundaryNode>& boundaryNodes,
+                                    const std::vector<BoundaryNode>& boundaryNodes,
                                     double initTemperature,
                                     double dt,
                                     double thermalConductivityCoefficient);
@@ -72,12 +79,9 @@ public:
 
     double getCurrentTime() const;
 
-    const std::vector<DTO::TriangleFace>& getTriangleFaces() const;
     const Nodes& getNodesDataAccessInterface() const;
-
 private:
     Nodes nodes;
-    std::vector<DTO::TriangleFace> faces;
     std::vector<std::vector<double>> L;
     std::vector<std::vector<double>> M;
     std::vector<std::vector<double>> A;

@@ -4,7 +4,7 @@
 class Point_2{
 public:
     Point_2(double x, double y) : x(x), y(y) {}
-
+    Point_2() : x(0), y(0) {}
     Point_2 operator+ (const Point_2& other) const{ //this - левый операнд, other - правый
         return {this->x + other.x, this->y + other.y};
     }
@@ -35,6 +35,11 @@ public:
 
     double getY() const {
         return y;
+    }
+
+    template<class Archive>
+    void serialize(Archive & archive) {
+        archive(x, y);
     }
 
 protected:

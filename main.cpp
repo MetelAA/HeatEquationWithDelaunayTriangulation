@@ -1,9 +1,6 @@
 #include <iostream>
-#include <optional>
-#include <random>
 
-#include "NumericSolution/NumericSolution.h"
-#include "Triangulation/DelaunayTriangulation.h"
+#include "SolutionController.h"
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
@@ -45,7 +42,11 @@ int main() {
     // }
     // std::cout << "max: " << max << "  min: " << min << "  avg: " << (avg / iterC)<< "\n";
 
-    DTO::TemperatureInitValues tInit = {0,0,0,0,0};
-    NumericSolution solution(100, 0.0, 1.0, 1.0, tInit, 0.0,0);
+
+    DTO::TemperatureInitValues tInit(20, 40, 60, 80, 100);
+    DTO::PlateParams params(0.5, 0.5, 9.71e-5, tInit);
+    SolutionController controller(500, params, 0.05, 500);
+
+
 
 }

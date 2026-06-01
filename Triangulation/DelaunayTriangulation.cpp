@@ -78,7 +78,6 @@ void Triangulation::DelaunayTriangulation::triangulate() {
     }
 }
 
-
 // (конструктор и getTriangulationResult остаются без изменений)
 Triangulation::DelaunayTriangulation::DelaunayTriangulation(std::vector<Point_2> &pts) {
     points = std::move(pts);

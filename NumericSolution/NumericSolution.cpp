@@ -5,8 +5,10 @@
 
 #include "../Triangulation/DelaunayTriangulation.h"
 
-NumericSolution::NumericSolution(int vertex_count, double thermalConductivityСoefficient, double width,
-                                 double height, DTO::TemperatureInitValues tInit, double dt, double experimentTime) {
+NumericSolution::NumericSolution(int vertex_count, const DTO::PlateParams &plateParams, double dt) : height(plateParams.height),
+      width(plateParams.width),
+      thermalConductivityCoefficient(plateParams.thermalConductivityCoefficient),
+      tInit(plateParams.tInit) {
     //создадим сетку (для начала границы потом натыкаем рандомно точек внутри)
     int boundaryVertexesCount = vertex_count * Constants::vertexOnBorderToAllVertexPropotion;
     boundaryVertexesCount = boundaryVertexesCount % 2 == 1 ? boundaryVertexesCount+1 : boundaryVertexesCount;
@@ -14,7 +16,7 @@ NumericSolution::NumericSolution(int vertex_count, double thermalConductivityСo
 
     this->points.reserve(vertex_count+1); //мало ли добили до чётности
 
-    std::vector<DTO::BoundaryNode> boundaryNodes;
+    std::vector<FiniteElementMethodHeatEquation::BoundaryNode> boundaryNodes;
     {
         int S = boundaryVertexesCount / 2;
         int K = std::round(S * (width / (width+height))); // K - кол-во интервалов на стороне a (a у нас будет нижней/верхней стороной, т.е. width)
@@ -85,27 +87,60 @@ NumericSolution::NumericSolution(int vertex_count, double thermalConductivityСo
 
     std::cout << "There are " << points.size() << " vertexes \n";
     Triangulation::DelaunayTriangulation triangulation(points);
-    DTO::TriangulationResult res = triangulation.getTriangulationResult();
+    DTO::TriangulationResult rez = triangulation.getTriangulationResult();
 
-    points = res.points;
+    points = rez.points;
+    faces = rez.faces;
 
-    std::cout << points.size() << "\n";
-    std::cout << res.faces.size() << "\n";
-    for(DTO::TriangleFace face : res.faces){
-        std::cout << "triangle: " << "v1: x |" << points[face.v1_index].getX() << "|, y |" << points[face.v1_index].getY() << "|; " << "v2: x |" << points[face.v2_index].getX() << "|, y |" << points[face.v2_index].getY() << "|; "
-        << "v3: x |" << points[face.v3_index].getX() << "|, y |" << points[face.v3_index].getY() << "|\n";
-    }
+    // std::cout << points.size() << "\n";
+    // std::cout << faces.size() << "\n";
+    // for(DTO::TriangleFace face : faces){
+    //     std::cout << "triangle: " << "v1: x |" << points[face.v1_index].getX() << "|, y |" << points[face.v1_index].getY() << "|; " << "v2: x |" << points[face.v2_index].getX() << "|, y |" << points[face.v2_index].getY() << "|; "
+    //     << "v3: x |" << points[face.v3_index].getX() << "|, y |" << points[face.v3_index].getY() << "|\n";
+    // }
 
 
-    this->heatEquation = FiniteElementMethodHeatEquation(points, res.faces, boundaryNodes, tInit.plateT0, dt, thermalConductivityСoefficient);
+    this->heatEquation = FiniteElementMethodHeatEquation(points, faces, boundaryNodes, tInit.plateT0, dt, thermalConductivityCoefficient);
 
     //сам эксперимент
-    int stepsCount = std::ceil(experimentTime/dt);
-    for (int i = 0; i < stepsCount; ++i) {
-        this->heatEquation.step();
-
-    }
-
-
 
 }
+
+const std::vector<Point_2> & NumericSolution::getPoints() const {
+    return this->points;
+}
+
+const std::vector<DTO::TriangleFace> & NumericSolution::getFaces() const {
+    return this->faces;
+}
+
+DTO::HeatEquationStepResult NumericSolution::step() {
+    std::vector<DTO::HeatPoint> heat_points;
+    this->heatEquation.step();
+    FiniteElementMethodHeatEquation::Nodes nodes = this->heatEquation.getNodesDataAccessInterface();
+
+    for (int i = 0; i < nodes.getNodesSize(); ++i) {
+        FiniteElementMethodHeatEquation::Node node = nodes.getNode(i);
+        heat_points.emplace_back(node.coords, node.temp);
+    }
+    return {heat_points, this->faces};
+}
+
+
+
+double NumericSolution::getCurrentTime() const {
+    return this->heatEquation.getCurrentTime();
+}
+
+DTO::HeatEquationStepResult NumericSolution::getZeroFrame() const {
+    std::vector<DTO::HeatPoint> heat_points;
+    FiniteElementMethodHeatEquation::Nodes nodes = this->heatEquation.getNodesDataAccessInterface();
+
+    for (int i = 0; i < nodes.getNodesSize(); ++i) {
+        FiniteElementMethodHeatEquation::Node node = nodes.getNode(i);
+        heat_points.emplace_back(node.coords, node.temp);
+    }
+    return {heat_points, this->faces};
+}
+
+

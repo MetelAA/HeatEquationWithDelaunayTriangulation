@@ -638,6 +638,7 @@ std::vector<DCEL::VertexWrapper> DCEL::getVertexesInWrappers() {
 
 DTO::TriangulationResult DCEL::getTriangulationWithCorrectBoundary() {
     std::vector<DTO::TriangleFace> triangles;
+    //кривота но ничего не поделаешь, в итоговом списке сдвигаем все элементы на 4 индекса, тк первые 4 элемента (1 бесконечный и 3 супер треугольника) будут удалены
 
     for (size_t i = 0; i < this->faces.size(); ++i) {
         DCEL::FaceWrapper face = {i, this};
@@ -656,12 +657,14 @@ DTO::TriangulationResult DCEL::getTriangulationWithCorrectBoundary() {
 
         if (is_super(a.getGeometry()) || is_super(b.getGeometry()) || is_super(c.getGeometry())) continue;
 
-        size_t a_coords_index = this->vertexes[a.vertex_index].point_coords_index;
-        size_t b_coords_index = this->vertexes[b.vertex_index].point_coords_index;
-        size_t c_coords_index = this->vertexes[c.vertex_index].point_coords_index;
+        size_t a_coords_index = this->vertexes[a.vertex_index].point_coords_index-3;
+        size_t b_coords_index = this->vertexes[b.vertex_index].point_coords_index-3;
+        size_t c_coords_index = this->vertexes[c.vertex_index].point_coords_index-3;
 
         triangles.emplace_back(a_coords_index, b_coords_index, c_coords_index);
     }
+
+    this->coords.erase(this->coords.begin(), this->coords.begin() + 3);
 
     return {this->coords, triangles};
 

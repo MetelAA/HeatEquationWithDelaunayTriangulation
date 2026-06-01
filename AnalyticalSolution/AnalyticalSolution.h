@@ -1,27 +1,28 @@
+//
+// Created by Artem on 01.06.2026.
+//
+
 #ifndef HEATEQUATIONWITHDELAUNAYTRIANGULATION_ANALYTICALSOLUTION_H
 #define HEATEQUATIONWITHDELAUNAYTRIANGULATION_ANALYTICALSOLUTION_H
+#include <vector>
 
-#include "../Triangulation/DTO.h"
-#include <complex>
-#include "../magic_constants.h"
-#include "../Triangulation/Point_2.h"
+
+#include "AnalyticalEquation.h"
+class Point_2;
 
 class AnalyticalSolution {
 public:
-    AnalyticalSolution(double width, double height, double thermal_conductivity_сoefficient,
-        const DTO::TemperatureInitValues &t_init);
+    AnalyticalSolution(const std::vector<Point_2> &points, const std::vector<DTO::TriangleFace>& faces, const DTO::PlateParams& params)
+        : points(points), faces(faces), analytical_equation(params){
+    }
 
-    double compute_TInPointInTime(Point_2 p, double t) const;
+    DTO::HeatEquationStepResult stepOn(double time);
 
 private:
-    double compute_TStationary(double x, double y) const;
-    void compute_C_mn();
+    const std::vector<Point_2>& points;
+    const std::vector<DTO::TriangleFace>& faces;
+    AnalyticalEquation analytical_equation;
 
-    static double sinh_l(double a); //типо может переполниться и сломать (не уверен что правда)
-
-    double width, height, thermalConductivityСoefficient;
-    DTO::TemperatureInitValues tInit;
-    std::vector<std::vector<double>> C_mn;
 };
 
 
