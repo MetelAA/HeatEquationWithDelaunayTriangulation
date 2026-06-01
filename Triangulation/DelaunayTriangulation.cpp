@@ -1,17 +1,12 @@
 #include <queue>
-#include "delaunay_triangulation.h"
+#include "DelaunayTriangulation.h"
 
-// ---------------------------------------------------------------------------
-// Проверка: должно ли ребро быть флипнуто?
-// Строго по лекции:
-//   - Бесконечное ребро проверяется через ориентацию.
-//   - Конечное ребро проверяется через in_circle для вершин twin-грани.
-// ---------------------------------------------------------------------------
-bool triangulation::delaunay_triangulation::isEdgeInvalid(dcel::EdgeWrapper e) { //если twin - существует, то существует соседняя грань полностью
-    dcel::VertexWrapper e_target = e.getTwinEdge().getSourceVertex();
-    dcel::VertexWrapper e_source = e.getSourceVertex();
-    dcel::VertexWrapper e_opposite   = e.getPrevEdge().getSourceVertex();
-    dcel::VertexWrapper twin_opposite = e.getTwinEdge().getPrevEdge().getSourceVertex();
+
+bool Triangulation::DelaunayTriangulation::isEdgeInvalid(DCEL::EdgeWrapper e) { //если twin - существует, то существует соседняя грань полностью
+    DCEL::VertexWrapper e_target = e.getTwinEdge().getSourceVertex();
+    DCEL::VertexWrapper e_source = e.getSourceVertex();
+    DCEL::VertexWrapper e_opposite   = e.getPrevEdge().getSourceVertex();
+    DCEL::VertexWrapper twin_opposite = e.getTwinEdge().getPrevEdge().getSourceVertex();
 
     if (e_source.is_infinite() || e_target.is_infinite() || e_opposite.is_infinite()) return false;
     //если ребро e принадлжеит бесконечной грани то его не флипаем, в ином
@@ -23,21 +18,19 @@ bool triangulation::delaunay_triangulation::isEdgeInvalid(dcel::EdgeWrapper e) {
                            twin_opposite.getGeometry(), e_opposite.getGeometry());
 }
 
-// ---------------------------------------------------------------------------
-// Рекурсивная валидация ребра (строго по лекции)
-// ---------------------------------------------------------------------------
-void triangulation::delaunay_triangulation::validateEdge(dcel::EdgeWrapper startEdge) {
-    std::queue<dcel::EdgeWrapper> toValidate;
+
+void Triangulation::DelaunayTriangulation::validateEdge(DCEL::EdgeWrapper startEdge) {
+    std::queue<DCEL::EdgeWrapper> toValidate;
     toValidate.push(startEdge);
 
     while (!toValidate.empty()) {
-        dcel::EdgeWrapper e = toValidate.front();
+        DCEL::EdgeWrapper e = toValidate.front();
         toValidate.pop();
         if (isEdgeInvalid(e)) {
             size_t node0_index = e.getFace().getDelaunayNodeIndex();
             size_t node1_index = e.getTwinEdge().getFace().getDelaunayNodeIndex();
-            dcel::EdgeWrapper newE = dcel.flip_edge(e);
-            std::vector<dcel::FaceWrapper> new_faces = {newE.getFace(), newE.getTwinEdge().getFace()};
+            DCEL::EdgeWrapper newE = dcel.flip_edge(e);
+            std::vector<DCEL::FaceWrapper> new_faces = {newE.getFace(), newE.getTwinEdge().getFace()};
             std::vector<size_t> new_leafs_indexes = tree.insertWhenFlip(new_faces, node0_index, node1_index);
             for (int i = 0; i < new_leafs_indexes.size(); ++i) {
                 dcel.update_face_node_index(new_faces[i], new_leafs_indexes[i]);
@@ -51,20 +44,18 @@ void triangulation::delaunay_triangulation::validateEdge(dcel::EdgeWrapper start
     }
 }
 
-// ---------------------------------------------------------------------------
-// Вставка всех точек
-// ---------------------------------------------------------------------------
-void triangulation::delaunay_triangulation::triangulate() {
+
+void Triangulation::DelaunayTriangulation::triangulate() {
     for (int i = 0; i < points.size(); ++i) {
-        const point_2 &p = points[i];
-        delaunay_tree::point_location location = tree.locate(p);
+        const Point_2 &p = points[i];
+        DelaunayTree::point_location location = tree.locate(p);
         std::vector<size_t> old_leafs_indexes = {location.face.getDelaunayNodeIndex()};
         if (location.edge.has_value()) {
             size_t neighbour_idx = location.edge->getTwinEdge().getFace().getDelaunayNodeIndex();
             old_leafs_indexes.push_back(neighbour_idx);
         }
-        dcel::VertexWrapper newVertex = dcel.split_face(location.face, location.edge, p);
-        std::vector<dcel::FaceWrapper> new_faces = dcel.get_incident_faces(newVertex);
+        DCEL::VertexWrapper newVertex = dcel.split_face(location.face, location.edge, p);
+        std::vector<DCEL::FaceWrapper> new_faces = dcel.get_incident_faces(newVertex);
         std::vector<size_t> new_leafs_indexes;
         if (!location.edge.has_value()) {
             if (old_leafs_indexes.size() != 1)
@@ -82,21 +73,20 @@ void triangulation::delaunay_triangulation::triangulate() {
             dcel.update_face_node_index(new_faces[j], new_leafs_indexes[j]);
         }
 
-        for (dcel::EdgeWrapper e : dcel.get_outgoing_edges(newVertex))
+        for (DCEL::EdgeWrapper e : dcel.get_outgoing_edges(newVertex))
             validateEdge(e.getNextEdge());
     }
 }
 
 
 // (конструктор и getTriangulationResult остаются без изменений)
-triangulation::delaunay_triangulation::delaunay_triangulation(std::vector<point_2> &pts) {
+Triangulation::DelaunayTriangulation::DelaunayTriangulation(std::vector<Point_2> &pts) {
     points = std::move(pts);
-    std::vector<dcel::FaceWrapper> root_faces = dcel.init_dcel_with_big_inf_triangle(points.size());
-    tree = delaunay_tree(root_faces, points.size());
+    std::vector<DCEL::FaceWrapper> root_faces = dcel.init_dcel_with_big_inf_triangle(points.size());
+    tree = DelaunayTree(root_faces, points.size());
     triangulate();
 }
 
-dto::TriangulationResult triangulation::delaunay_triangulation::getTriangulationResult(
-        const std::unordered_map<point_2, point_2> &boundary_vertexes_map) {
-    return dcel.getTriangulationWithCorrectBoundary(boundary_vertexes_map);
+DTO::TriangulationResult Triangulation::DelaunayTriangulation::getTriangulationResult() {
+    return dcel.getTriangulationWithCorrectBoundary();
 }

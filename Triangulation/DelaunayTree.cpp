@@ -1,7 +1,7 @@
-#include "delaunay_tree.h"
+#include "DelaunayTree.h"
 
-std::vector<size_t> delaunay_tree::insertWhenOneFace(const std::vector<dcel::FaceWrapper> &newFaces,
-                                                     size_t old_leaf_index) {
+std::vector<size_t> DelaunayTree::insertWhenOneFace(const std::vector<DCEL::FaceWrapper> &newFaces,
+                                                    size_t old_leaf_index) {
     std::vector<size_t> newLeafsIndexes = insertNewLeafs(newFaces);
     Internal internal(
         this->nodes_[old_leaf_index]->getV1(),
@@ -15,16 +15,16 @@ std::vector<size_t> delaunay_tree::insertWhenOneFace(const std::vector<dcel::Fac
     return newLeafsIndexes;
 }
 
-std::vector<size_t> delaunay_tree::insertWhenEdge(const std::vector<dcel::FaceWrapper> &newFaces,
+std::vector<size_t> DelaunayTree::insertWhenEdge(const std::vector<DCEL::FaceWrapper> &newFaces,
                                                   size_t old_leaf_index1,
                                                   size_t old_leaf_index2) {
     std::vector<size_t> newLeafsIndexes = insertNewLeafs(newFaces);
 
     const std::vector<size_t> oldLeafsIndexes = {old_leaf_index1, old_leaf_index2};
     for (const size_t old_leaf_index : oldLeafsIndexes) {
-        dcel::VertexWrapper ov1 = nodes_[old_leaf_index]->getV1();
-        dcel::VertexWrapper ov2 = nodes_[old_leaf_index]->getV2();
-        dcel::VertexWrapper ov3 = nodes_[old_leaf_index]->getV3();
+        DCEL::VertexWrapper ov1 = nodes_[old_leaf_index]->getV1();
+        DCEL::VertexWrapper ov2 = nodes_[old_leaf_index]->getV2();
+        DCEL::VertexWrapper ov3 = nodes_[old_leaf_index]->getV3();
 
         std::vector<size_t> old_leaf_children;
         for (size_t newLeafIndex : newLeafsIndexes) {
@@ -48,7 +48,7 @@ std::vector<size_t> delaunay_tree::insertWhenEdge(const std::vector<dcel::FaceWr
     return newLeafsIndexes;
 }
 
-std::vector<size_t> delaunay_tree::insertWhenFlip(const std::vector<dcel::FaceWrapper> &newFaces,
+std::vector<size_t> DelaunayTree::insertWhenFlip(const std::vector<DCEL::FaceWrapper> &newFaces,
                                                   size_t old_leaf_index1,
                                                   size_t old_leaf_index2) {
     std::vector<size_t> newLeafsIndexes = insertNewLeafs(newFaces);
@@ -73,12 +73,12 @@ std::vector<size_t> delaunay_tree::insertWhenFlip(const std::vector<dcel::FaceWr
     return newLeafsIndexes;
 }
 
-std::vector<size_t> delaunay_tree::insertNewLeafs(const std::vector<dcel::FaceWrapper> &newFaces) {
+std::vector<size_t> DelaunayTree::insertNewLeafs(const std::vector<DCEL::FaceWrapper> &newFaces) {
     std::vector<size_t> newLeafsIndexes; //он же children_indexes
     for (auto &newFace: newFaces) {
-        dcel::VertexWrapper v1 = newFace.getEdge().getSourceVertex();
-        dcel::VertexWrapper v2 = newFace.getEdge().getNextEdge().getSourceVertex();
-        dcel::VertexWrapper v3 = newFace.getEdge().getNextEdge().getNextEdge().getSourceVertex();
+        DCEL::VertexWrapper v1 = newFace.getEdge().getSourceVertex();
+        DCEL::VertexWrapper v2 = newFace.getEdge().getNextEdge().getSourceVertex();
+        DCEL::VertexWrapper v3 = newFace.getEdge().getNextEdge().getNextEdge().getSourceVertex();
         size_t newLeafIndex = nodes_.size();
         newLeafsIndexes.push_back(newLeafIndex);
         nodes_.emplace_back(std::make_unique<Leaf>(v1, v2, v3, this, newFace));

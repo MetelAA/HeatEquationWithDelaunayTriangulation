@@ -2,11 +2,11 @@
 #ifndef HEATEQUATIONWITHDELAUNAYTRIANGULATION_DTO_H
 #define HEATEQUATIONWITHDELAUNAYTRIANGULATION_DTO_H
 
-#include <cstdio>
 #include <stdexcept>
 #include <vector>
+#include "Point_2.h"
 
-namespace dto{
+namespace DTO{
     struct TriangleFace {
         TriangleFace(size_t v1Index, size_t v2Index, size_t v3Index) : v1_index(v1Index), v2_index(v2Index),
                                                                        v3_index(v3Index) {}
@@ -32,10 +32,23 @@ namespace dto{
     };
 
     struct TriangulationResult{
-        TriangulationResult(const std::vector<point_2> &points, const std::vector<dto::TriangleFace> &faces) : points(points), faces(faces){}
+        TriangulationResult(const std::vector<Point_2> &points, const std::vector<DTO::TriangleFace> &faces) : points(points), faces(faces){}
 
-        std::vector<point_2> points;
-        std::vector<dto::TriangleFace> faces;
+        std::vector<Point_2> points;
+        std::vector<DTO::TriangleFace> faces;
+    };
+
+    struct TemperatureInitValues {
+        const double plateT0, leftBoundaryT, rightBoundaryT, topBoundaryT, bottomBoundaryT;
+
+        TemperatureInitValues(double plate_t0, double left_boundary_t, double right_boundary_t, double top_boundary_t,
+            double bottom_boundary_t)
+            : plateT0(plate_t0),
+              leftBoundaryT(left_boundary_t),
+              rightBoundaryT(right_boundary_t),
+              topBoundaryT(top_boundary_t),
+              bottomBoundaryT(bottom_boundary_t) {
+        }
     };
 
 }

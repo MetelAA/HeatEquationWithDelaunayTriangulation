@@ -1,7 +1,7 @@
 #ifndef HEATEQUATIONWITHDELAUNAYTRIANGULATION_VECTOR_STUFF_H
 #define HEATEQUATIONWITHDELAUNAYTRIANGULATION_VECTOR_STUFF_H
 
-#include "point_2.h"
+#include "Point_2.h"
 
 namespace vector_s{
     enum class orientation{
@@ -9,10 +9,10 @@ namespace vector_s{
     };
 
 
-    inline orientation vector_orientation(const point_2& a, const point_2& b, const point_2& c){
-        point_2 ab = b - a;
-        point_2 ac = c - a;
-        double ps_scal = point_2::pseudo_scalar(ab, ac);
+    inline orientation vector_orientation(const Point_2& a, const Point_2& b, const Point_2& c){
+        Point_2 ab = b - a;
+        Point_2 ac = c - a;
+        double ps_scal = Point_2::pseudo_scalar(ab, ac);
         if(std::abs(ps_scal) < 1e-9){
             return orientation::collinear;
         }else if(ps_scal > 0){
@@ -25,7 +25,7 @@ namespace vector_s{
     // a, b, c – вершины треугольника, перечисленные против часовой стрелки
     // d – проверяемая точка
     // true - если d лежит строго внутри окружности, описанной вокруг треугольника abc
-    inline bool in_circle(const point_2& a, const point_2& b, const point_2& c, const point_2& d) {
+    inline bool in_circle(const Point_2& a, const Point_2& b, const Point_2& c, const Point_2& d) {
         double adx = a.getX() - d.getX(), ady = a.getY() - d.getY();
         double bdx = b.getX() - d.getX(), bdy = b.getY() - d.getY();
         double cdx = c.getX() - d.getX(), cdy = c.getY() - d.getY();

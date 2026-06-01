@@ -1,14 +1,14 @@
 #include <stdexcept>
 #include <queue>
-#include "dcel.h"
+#include "DCEL.h"
 
 #include <iostream>
 
 
-dcel::VertexWrapper
-dcel::split_face(dcel::FaceWrapper faceWithPointOn,
-                 std::optional<dcel::EdgeWrapper> edgeWithPointOn,
-                 point_2 point) {
+DCEL::VertexWrapper
+DCEL::split_face(DCEL::FaceWrapper faceWithPointOn,
+                 std::optional<DCEL::EdgeWrapper> edgeWithPointOn,
+                 Point_2 point) {
     if (edgeWithPointOn.has_value()) {
         //случай с попаданием на ребро
         edge e3 = this->edges[edgeWithPointOn.value().edge_index];
@@ -325,7 +325,7 @@ dcel::split_face(dcel::FaceWrapper faceWithPointOn,
 }
 
 
-std::vector<dcel::FaceWrapper> dcel::get_incident_faces(dcel::VertexWrapper v) const {
+std::vector<DCEL::FaceWrapper> DCEL::get_incident_faces(DCEL::VertexWrapper v) const {
     std::vector<FaceWrapper> incident_faces;
     EdgeWrapper start = v.getEdge();
     EdgeWrapper iter = start;
@@ -337,7 +337,7 @@ std::vector<dcel::FaceWrapper> dcel::get_incident_faces(dcel::VertexWrapper v) c
 }
 
 
-std::vector<dcel::EdgeWrapper> dcel::get_outgoing_edges(dcel::VertexWrapper v) const {
+std::vector<DCEL::EdgeWrapper> DCEL::get_outgoing_edges(DCEL::VertexWrapper v) const {
     std::vector<EdgeWrapper> outgoing_edges;
     EdgeWrapper start = v.getEdge();
     EdgeWrapper iter = start;
@@ -349,12 +349,12 @@ std::vector<dcel::EdgeWrapper> dcel::get_outgoing_edges(dcel::VertexWrapper v) c
     return outgoing_edges;
 }
 
-void dcel::update_face_node_index(dcel::FaceWrapper face, size_t node_index) {
+void DCEL::update_face_node_index(DCEL::FaceWrapper face, size_t node_index) {
     this->faces[face.face_index].node_index = node_index;
 }
 
 
-std::vector<dcel::FaceWrapper> dcel::init_dcel_with_big_inf_triangle(size_t coordsSize) {
+std::vector<DCEL::FaceWrapper> DCEL::init_dcel_with_big_inf_triangle(size_t coordsSize) {
     this->coords.reserve(coordsSize);
     this->edges.reserve(coordsSize * 5);
     this->vertexes.reserve(coordsSize + 4);
@@ -519,7 +519,7 @@ std::vector<dcel::FaceWrapper> dcel::init_dcel_with_big_inf_triangle(size_t coor
 }
 
 
-dcel::EdgeWrapper dcel::flip_edge(EdgeWrapper p_i_p_j_edge) {
+DCEL::EdgeWrapper DCEL::flip_edge(EdgeWrapper p_i_p_j_edge) {
     //проинициализируем всё ребра входящие в ОБЕ!!! грани (face0 face1)
     edge e0 = this->edges[p_i_p_j_edge.edge_index];
     edge e3 = this->edges[e0.twin_edge_index];
@@ -627,8 +627,8 @@ dcel::EdgeWrapper dcel::flip_edge(EdgeWrapper p_i_p_j_edge) {
 }
 
 
-std::vector<dcel::VertexWrapper> dcel::getVertexesInWrappers() {
-    std::vector<dcel::VertexWrapper> wrappers;
+std::vector<DCEL::VertexWrapper> DCEL::getVertexesInWrappers() {
+    std::vector<DCEL::VertexWrapper> wrappers;
     for (int i = 0; i < this->vertexes.size(); ++i) {
         wrappers.emplace_back(i, this);
     }
@@ -636,50 +636,23 @@ std::vector<dcel::VertexWrapper> dcel::getVertexesInWrappers() {
 }
 
 
-dto::TriangulationResult dcel::getTriangulationWithCorrectBoundary(
-    const std::unordered_map<point_2, point_2> &boundary_vertexes_map) {
-    // std::vector<std::array<point_2, 3>> result;
-    //
-    // for (size_t fi = 0; fi < dcel_.faces.size(); ++fi) {
-    //     const auto& face = dcel_.faces[fi];
-    //     if (face.infinite || face.edge == INVALID) continue;
-    //
-    //     size_t v0, v1, v2;
-    //     dcel_.face_vertices(fi, v0, v1, v2);
-    //
-    //     if (dcel_.is_infinite_vertex(v0) || dcel_.is_infinite_vertex(v1) || dcel_.is_infinite_vertex(v2))
-    //         continue;
-    //
-    //     auto is_super = [](const point_2& q) {
-    //         return std::abs(q.getX()) >= SUPER * 0.9 || std::abs(q.getY()) >= SUPER * 0.9;
-    //     };
-    //
-    //     point_2 a = dcel_.vertices[v0].pos;
-    //     point_2 b = dcel_.vertices[v1].pos;
-    //     point_2 c = dcel_.vertices[v2].pos;
-    //
-    //     if (is_super(a) || is_super(b) || is_super(c)) continue;
-    //
-    //     result.push_back({a, b, c});
-    // }
-    // return result;
-
-    std::vector<dto::TriangleFace> triangles;
+DTO::TriangulationResult DCEL::getTriangulationWithCorrectBoundary() {
+    std::vector<DTO::TriangleFace> triangles;
 
     for (size_t i = 0; i < this->faces.size(); ++i) {
-        dcel::FaceWrapper face = {i, this};
+        DCEL::FaceWrapper face = {i, this};
         if (face.getEdge().getSourceVertex().is_infinite() || face.getEdge().getNextEdge().getSourceVertex().
             is_infinite() || face.getEdge().getPrevEdge().getSourceVertex().is_infinite()) {
             continue;
         }
 
-        auto is_super = [](const point_2 &q) {
+        auto is_super = [](const Point_2 &q) {
             return std::abs(q.getX()) >= Constants::super * 0.9 || std::abs(q.getY()) >= Constants::super * 0.9;
         };
 
-        dcel::VertexWrapper a = face.getEdge().getSourceVertex();
-        dcel::VertexWrapper b = face.getEdge().getNextEdge().getSourceVertex();
-        dcel::VertexWrapper c = face.getEdge().getPrevEdge().getSourceVertex();
+        DCEL::VertexWrapper a = face.getEdge().getSourceVertex();
+        DCEL::VertexWrapper b = face.getEdge().getNextEdge().getSourceVertex();
+        DCEL::VertexWrapper c = face.getEdge().getPrevEdge().getSourceVertex();
 
         if (is_super(a.getGeometry()) || is_super(b.getGeometry()) || is_super(c.getGeometry())) continue;
 

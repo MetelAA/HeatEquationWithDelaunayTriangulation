@@ -6,23 +6,23 @@
 #include <cmath>
 #include <iostream>
 #include <utility>
-#include "dcel.h"
+#include "DCEL.h"
 #include "vector_stuff.h"
 
-class delaunay_tree {
+class DelaunayTree {
 public:
-    delaunay_tree() {} //пришлось создать инчае гемор, используется один раз и тут же перезабивается нормальным
+    DelaunayTree() {} //пришлось создать инчае гемор, используется один раз и тут же перезабивается нормальным
 
-    delaunay_tree(const std::vector<dcel::FaceWrapper>& rootFaces, size_t points_count) {
+    DelaunayTree(const std::vector<DCEL::FaceWrapper>& rootFaces, size_t points_count) {
         size_t log2n = static_cast<size_t>(std::ceil(std::log2(points_count)));
         nodes_.reserve(10 * points_count * log2n + 64);
 
         roots_count = 0;
-        for (dcel::FaceWrapper face : rootFaces) {
-            dcel::EdgeWrapper e = face.getEdge();
-            dcel::VertexWrapper v0 = e.getSourceVertex();
-            dcel::VertexWrapper v1 = e.getNextEdge().getSourceVertex();
-            dcel::VertexWrapper v2 = e.getNextEdge().getNextEdge().getSourceVertex();
+        for (DCEL::FaceWrapper face : rootFaces) {
+            DCEL::EdgeWrapper e = face.getEdge();
+            DCEL::VertexWrapper v0 = e.getSourceVertex();
+            DCEL::VertexWrapper v1 = e.getNextEdge().getSourceVertex();
+            DCEL::VertexWrapper v2 = e.getNextEdge().getNextEdge().getSourceVertex();
 
             //будем выполнять соглашение, что если root грань содержит точку на бесконечности, то она находиться на месте v0, позволит не городить циклы с поиском конечной грани в locate для поиска конечного ребра
             //я не уверен что после таких свапов не нужно перестраивать треугольник, но учитывая что p_inf - находиться просто где-то, и конечное ребро - всегда твин какого-то ребра из конечного супертреугольника (face3)
@@ -36,14 +36,14 @@ public:
     }
 
     struct point_location { //куда попала точка которую мы пытаемся вставить, всегда FaceWrapper (грань) и если попали то EdgeWrapper (ребро на которое попали)
-        dcel::FaceWrapper face;
-        std::optional<dcel::EdgeWrapper> edge;
+        DCEL::FaceWrapper face;
+        std::optional<DCEL::EdgeWrapper> edge;
 
-        point_location(const dcel::FaceWrapper &face, const std::optional<dcel::EdgeWrapper> &edge) : face(face),
+        point_location(const DCEL::FaceWrapper &face, const std::optional<DCEL::EdgeWrapper> &edge) : face(face),
                                                                                                       edge(edge) {}
     };
 
-    point_location locate(const point_2 &point) {
+    point_location locate(const Point_2 &point) {
         std::optional<point_location> loc;
         for (int i = roots_count-1; i >= 0; i--) {
             size_t cur_idx = i;
@@ -67,18 +67,18 @@ public:
     //Таким образом, у нас будет 3 метода insert - первый для случая попадания внутрь грани, на вход 3 ребёнка+индекс родителя, на выход 3 индекса новых Leaf для детей (в той же последовательности как заходили дети)
     // второй - для попадания на грань, 4 ребёнка, два индекса родителя, придётся посортировать какой ребёнок от какого родителя, на выход тоже самое (самый кринжовый метод из троицы)
     // третий - для flip edge на вход - 2 ребёнка, два индекса родителя, на выход также
-    std::vector<size_t> insertWhenOneFace(const std::vector<dcel::FaceWrapper> &newFaces, size_t old_leaf_index);
-    std::vector<size_t> insertWhenEdge(const std::vector<dcel::FaceWrapper> &newFaces, size_t old_leaf_index1, size_t old_leaf_index2);
-    std::vector<size_t> insertWhenFlip(const std::vector<dcel::FaceWrapper> &newFaces, size_t old_leaf_index1, size_t old_leaf_index2);
+    std::vector<size_t> insertWhenOneFace(const std::vector<DCEL::FaceWrapper> &newFaces, size_t old_leaf_index);
+    std::vector<size_t> insertWhenEdge(const std::vector<DCEL::FaceWrapper> &newFaces, size_t old_leaf_index1, size_t old_leaf_index2);
+    std::vector<size_t> insertWhenFlip(const std::vector<DCEL::FaceWrapper> &newFaces, size_t old_leaf_index1, size_t old_leaf_index2);
 
 
 
 private:
-    std::vector<size_t> insertNewLeafs(const std::vector<dcel::FaceWrapper>& newFaces); //возвращает индексы вставленных leafs в том же порядке как поступили faces
+    std::vector<size_t> insertNewLeafs(const std::vector<DCEL::FaceWrapper>& newFaces); //возвращает индексы вставленных leafs в том же порядке как поступили faces
 
     class Node {
     public:
-        Node(const dcel::VertexWrapper &v1, const dcel::VertexWrapper &v2, const dcel::VertexWrapper &v3, delaunay_tree* tree)
+        Node(const DCEL::VertexWrapper &v1, const DCEL::VertexWrapper &v2, const DCEL::VertexWrapper &v3, DelaunayTree* tree)
                 : v1(v1), v2(v2), v3(v3), tree(tree) {
             //сделаем проверку на правильность ориентации ребер (обход против часовой)
             if (!v1.is_infinite() && !v2.is_infinite() && !v3.is_infinite()) {
@@ -94,25 +94,25 @@ private:
 
         virtual ~Node() = default;
 
-        virtual std::optional<size_t> locate(point_2 const &p, std::optional<point_location> &location) const = 0;
+        virtual std::optional<size_t> locate(Point_2 const &p, std::optional<point_location> &location) const = 0;
 
-        const dcel::VertexWrapper &getV1() const { return v1; }
+        const DCEL::VertexWrapper &getV1() const { return v1; }
 
-        const dcel::VertexWrapper &getV2() const { return v2; }
+        const DCEL::VertexWrapper &getV2() const { return v2; }
 
-        const dcel::VertexWrapper &getV3() const { return v3; }
+        const DCEL::VertexWrapper &getV3() const { return v3; }
 
     protected:
-        dcel::VertexWrapper v1, v2, v3; //врапперы вершин образующих грань
-        delaunay_tree *tree;
+        DCEL::VertexWrapper v1, v2, v3; //врапперы вершин образующих грань
+        DelaunayTree *tree;
     };
 
     class Internal : public Node {
     public:
-        Internal(const dcel::VertexWrapper &v1, const dcel::VertexWrapper &v2, const dcel::VertexWrapper &v3, delaunay_tree *tree,
+        Internal(const DCEL::VertexWrapper &v1, const DCEL::VertexWrapper &v2, const DCEL::VertexWrapper &v3, DelaunayTree *tree,
                  std::vector<size_t> children_indexes) : Node(v1, v2, v3, tree), children_indexes(std::move(children_indexes)) {}
 
-        virtual std::optional<size_t> locate(const point_2 &p, std::optional<point_location> &location) const override {
+        virtual std::optional<size_t> locate(const Point_2 &p, std::optional<point_location> &location) const override {
             for (const size_t child_index : children_indexes) {
                 auto child = tree->nodes_[child_index].get();
                 if (point_in_node(child->getV1(), child->getV2(), child->getV3(), p)) {
@@ -126,8 +126,8 @@ private:
         std::vector<size_t> children_indexes;
 
 
-        static bool point_in_node(const dcel::VertexWrapper &v0, const dcel::VertexWrapper &v1,
-                                  const dcel::VertexWrapper &v2, const point_2 &p) {
+        static bool point_in_node(const DCEL::VertexWrapper &v0, const DCEL::VertexWrapper &v1,
+                                  const DCEL::VertexWrapper &v2, const Point_2 &p) {
             if (v0.is_infinite()) {
                 //логика с полуплоскостями, учитывая что v0 - inf, значит конечное ребро образуют v1, v2
                 return vector_s::vector_orientation(v1.getGeometry(), v2.getGeometry(), p) != vector_s::orientation::right;
@@ -143,18 +143,18 @@ private:
 
     class Leaf : public Node {
     public:
-        Leaf(const dcel::VertexWrapper &v1, const dcel::VertexWrapper &v2, const dcel::VertexWrapper &v3, delaunay_tree *tree,
-             const dcel::FaceWrapper &face) : Node(v1, v2, v3, tree), face(face) {}
+        Leaf(const DCEL::VertexWrapper &v1, const DCEL::VertexWrapper &v2, const DCEL::VertexWrapper &v3, DelaunayTree *tree,
+             const DCEL::FaceWrapper &face) : Node(v1, v2, v3, tree), face(face) {}
 
-        virtual std::optional<size_t> locate(const point_2 &p, std::optional<point_location> &location) const override {
+        virtual std::optional<size_t> locate(const Point_2 &p, std::optional<point_location> &location) const override {
             if (v1.is_infinite()) { //Если грань содержит хотя бы одну бесконечную вершину, точка не может лежать на ребре с такой вершиной
                 location.emplace(face, std::nullopt);
                 return std::nullopt;
             }
 
-            point_2 p1 = this->v1.getGeometry();
-            point_2 p2 = this->v2.getGeometry();
-            point_2 p3 = this->v3.getGeometry();
+            Point_2 p1 = this->v1.getGeometry();
+            Point_2 p2 = this->v2.getGeometry();
+            Point_2 p3 = this->v3.getGeometry();
             if (vector_s::vector_orientation(p1, p2, p) ==
                 vector_s::orientation::collinear) { //ориетация против часовой (буду писать это везде иначе сам запутаюсь, хз почему в МФТИ лекция дана правая?)
                 location.emplace(face, findEdge(v1, v2));
@@ -170,10 +170,10 @@ private:
         }
 
     private:
-        dcel::FaceWrapper face; //текущая существующая в dcel грань
-        dcel::EdgeWrapper findEdge(const dcel::VertexWrapper &a, const dcel::VertexWrapper &b) const {
-            dcel::EdgeWrapper startEdgeInFace = face.getEdge();
-            dcel::EdgeWrapper currentEdge = startEdgeInFace;
+        DCEL::FaceWrapper face; //текущая существующая в dcel грань
+        DCEL::EdgeWrapper findEdge(const DCEL::VertexWrapper &a, const DCEL::VertexWrapper &b) const {
+            DCEL::EdgeWrapper startEdgeInFace = face.getEdge();
+            DCEL::EdgeWrapper currentEdge = startEdgeInFace;
             do {
                 if (currentEdge.getSourceVertex() == a && currentEdge.getNextEdge().getSourceVertex() == b)
                     return currentEdge;

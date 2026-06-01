@@ -1,12 +1,10 @@
-//
-// Created by Artem on 28.05.2026.
-//
+
 
 #include "FiniteElementMethodHeatEquation.h"
 
-FiniteElementMethodHeatEquation::FiniteElementMethodHeatEquation(const std::vector<point_2> &points,
-                                                                 const std::vector<dto::TriangleFace> &faces,
-                                                                 const std::vector<dto::BoundaryNode> &boundaryNodes,
+FiniteElementMethodHeatEquation::FiniteElementMethodHeatEquation(const std::vector<Point_2> &points,
+                                                                 const std::vector<DTO::TriangleFace> &trFaces,
+                                                                 const std::vector<DTO::BoundaryNode> &boundaryNodes,
                                                                  double initTemperature, double dt,
                                                                  double thermalConductivityCoefficient) {
     //в этот конструктор попадают уже только внутренние грани, т.е. отсеяные от того что лишним образом натреагулировали
@@ -19,13 +17,13 @@ FiniteElementMethodHeatEquation::FiniteElementMethodHeatEquation(const std::vect
     std::vector<std::vector<double>> K(points.size(), std::vector<double>(points.size(), 0));
     M = std::vector<std::vector<double>>(points.size(), std::vector<double>(points.size(), 0));
     //булем считать локальные матрицы для каждого элемента
-    for(dto::TriangleFace face : faces){
+    for(DTO::TriangleFace face : trFaces){
         std::vector<std::vector<double>> local_K;
         std::vector<std::vector<double>> local_M;
         {
-            point_2 i = points[face.v1_index];
-            point_2 j = points[face.v2_index];
-            point_2 k = points[face.v3_index];
+            Point_2 i = points[face.v1_index];
+            Point_2 j = points[face.v2_index];
+            Point_2 k = points[face.v3_index];
 
             double s = i.getX() * (j.getY() - k.getY()) + j.getX() * (k.getY() - i.getY()) + k.getX() * (i.getY() - j.getY()); //площадь * 2
 
@@ -57,7 +55,7 @@ FiniteElementMethodHeatEquation::FiniteElementMethodHeatEquation(const std::vect
                 local_M = {
                         {m * 2, m, m},
                         {m, m * 2, m},
-                        {m, m, 2 * m}
+                        {m, m,  m * 2}
                 };
             }
         }
@@ -83,7 +81,7 @@ FiniteElementMethodHeatEquation::FiniteElementMethodHeatEquation(const std::vect
     std::vector<std::vector<double>> A_mod = A;
 
     //введём условия Дирихле, т.е. обнулим строки/столбцы для граничных нод
-    for(dto::BoundaryNode boundary : boundaryNodes){
+    for(DTO::BoundaryNode boundary : boundaryNodes){
         for (int i = 0; i < A_mod.size(); ++i) {
             bool isDiagonalElement = i == boundary.node_index;
             A_mod[i][boundary.node_index] = isDiagonalElement;
@@ -119,11 +117,13 @@ FiniteElementMethodHeatEquation::FiniteElementMethodHeatEquation(const std::vect
     }
 
     std::vector<bool> isBoundary(points.size(), false);
-    for(dto::BoundaryNode boundary : boundaryNodes){
+    for(DTO::BoundaryNode boundary : boundaryNodes){
         nodeTemperatures[boundary.node_index] = boundary.temp;
         isBoundary[boundary.node_index] = true;
     }
+
     nodes = Nodes(points, nodeTemperatures, isBoundary);
+    this->faces = trFaces;
     curTime = 0;
 }
 
@@ -171,4 +171,17 @@ void FiniteElementMethodHeatEquation::step() {
     }
 
     nodes.changeTempInNodes(x);
+    curTime += dt;
+}
+
+double FiniteElementMethodHeatEquation::getCurrentTime() const {
+    return curTime;
+}
+
+const std::vector<DTO::TriangleFace> & FiniteElementMethodHeatEquation::getTriangleFaces() const {
+    return this->faces;
+}
+
+const FiniteElementMethodHeatEquation::Nodes & FiniteElementMethodHeatEquation::getNodesDataAccessInterface() const {
+    return this->nodes;
 }

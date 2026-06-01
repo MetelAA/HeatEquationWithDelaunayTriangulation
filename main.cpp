@@ -1,49 +1,51 @@
 #include <iostream>
 #include <optional>
-#include "Triangulation/delaunay_triangulation.h"
+#include <random>
+
+#include "NumericSolution/NumericSolution.h"
+#include "Triangulation/DelaunayTriangulation.h"
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
-    std::vector<point_2> allPoints = {
-            point_2(20, 30),   // вершина границы
-            point_2(60, 10),   // вершина границы
-            point_2(90, 40),   // вершина границы
-            point_2(80, 80),   // вершина границы
-            point_2(40, 90),   // вершина границы
-            point_2(10, 60),   // вершина границы
-            point_2(40, 40),   // внутренняя
-            point_2(60, 60),   // внутренняя
-            point_2(30, 70),   // внутренняя
-            point_2(70, 50)    // внутренняя
-    };
-    std::vector<point_2> boundary = {
-            point_2(20, 30),
-            point_2(60, 10),
-            point_2(90, 40),
-            point_2(80, 80),
-            point_2(40, 90),
-            point_2(10, 60)
-    };
-    std::unordered_map<point_2, point_2> boundaryMap = {
-            { point_2(20,30), point_2(60,10) },
-            { point_2(60,10), point_2(90,40) },
-            { point_2(90,40), point_2(80,80) },
-            { point_2(80,80), point_2(40,90) },
-            { point_2(40,90), point_2(10,60) },
-            { point_2(10,60), point_2(20,30) }
-    };
+    // std::vector<Point_2> allPoints = {
+    //         Point_2(20, 30),   // вершина границы
+    //         Point_2(60, 10),   // вершина границы
+    //         Point_2(90, 40),   // вершина границы
+    //         Point_2(80, 80),   // вершина границы
+    //         Point_2(40, 90),   // вершина границы
+    //         Point_2(10, 60),   // вершина границы
+    //         Point_2(40, 40),   // внутренняя
+    //         Point_2(60, 60),   // внутренняя
+    //         Point_2(30, 70),   // внутренняя
+    //         Point_2(70, 50)    // внутренняя
+    // };
+    // std::vector<Point_2> boundary = {
+    //         Point_2(20, 30),
+    //         Point_2(60, 10),
+    //         Point_2(90, 40),
+    //         Point_2(80, 80),
+    //         Point_2(40, 90),
+    //         Point_2(10, 60)
+    // };
 
-    triangulation::delaunay_triangulation triangulation(allPoints);
-    dto::TriangulationResult res = triangulation.getTriangulationResult(boundaryMap);
 
-    std::vector<point_2> points = res.points;
 
-    std::cout << points.size() << "\n";
-    std::cout << res.faces.size() << "\n";
-    for(dto::TriangleFace face : res.faces){
-        std::cout << "triangle: " << "v1: x |" << points[face.v1_index].getX() << "|, y |" << points[face.v1_index].getY() << "|; " << "v2: x |" << points[face.v2_index].getX() << "|, y |" << points[face.v2_index].getY() << "|; "
-        << "v3: x |" << points[face.v3_index].getX() << "|, y |" << points[face.v3_index].getY() << "|\n";
-    }
 
+    // std::mt19937 gen{std::random_device{}()};
+    // std::uniform_real_distribution<double> dist(0.1, std::nextafter(0.55, std::numeric_limits<double>::max()));
+    //
+    // int iterC = 1000;
+    // double min = 1000000, max = -1, avg = 0;
+    // for (int i = 0; i < iterC; ++i) {
+    //     double generated = dist(gen);
+    //     min = std::min(min, generated);
+    //     max = std::max(max, generated);
+    //     avg += generated;
+    //     // std::cout << generated << "\n";
+    // }
+    // std::cout << "max: " << max << "  min: " << min << "  avg: " << (avg / iterC)<< "\n";
+
+    DTO::TemperatureInitValues tInit = {0,0,0,0,0};
+    NumericSolution solution(100, 0.0, 1.0, 1.0, tInit, 0.0,0);
 
 }

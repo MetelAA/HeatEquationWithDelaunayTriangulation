@@ -3,14 +3,14 @@
 
 #include <vector>
 #include <cstdio>
-#include "point_2.h"
+#include "Point_2.h"
 #include <optional>
 #include <unordered_map>
-#include "magic_constants.h"
-#include "dto.h"
+#include "../magic_constants.h"
+#include "DTO.h"
 
 
-class dcel {
+class DCEL {
 private:
     class vertex {
     public:
@@ -55,7 +55,7 @@ private:
     };
 
     std::vector<vertex> vertexes;
-    std::vector<point_2> coords;
+    std::vector<Point_2> coords;
     std::vector<edge> edges;
     std::vector<face> faces;
 
@@ -67,9 +67,9 @@ public:
     class EdgeWrapper;
 
     class VertexWrapper {
-        friend dcel;
+        friend DCEL;
     public:
-        VertexWrapper(size_t vertexIndex, dcel *dcel) : vertex_index(vertexIndex), dcel(dcel) {}
+        VertexWrapper(size_t vertexIndex, DCEL *dcel) : vertex_index(vertexIndex), dcel(dcel) {}
 
         bool operator==(const VertexWrapper &other) const {
             return vertex_index == other.vertex_index;
@@ -89,7 +89,7 @@ public:
         }
 
         //мб добавить возврат типа ребра, типо нормал, или те которые на бесконечности (по отдельному типу для каждого!)
-        point_2 getGeometry() const {
+        Point_2 getGeometry() const {
             vertex curVertex = dcel->vertexes[vertex_index];
             return dcel->coords[curVertex.point_coords_index];
         }
@@ -99,13 +99,13 @@ public:
     private:
 
         size_t vertex_index; // индекс вершины в vector vertexes которую оборачивает в этот wrapper
-        dcel *dcel;
+        DCEL *dcel;
     };
 
     class EdgeWrapper {
-        friend dcel;
+        friend DCEL;
     public:
-        EdgeWrapper(size_t edgeIndex, dcel *dcel) : edge_index(edgeIndex), dcel(dcel) {}
+        EdgeWrapper(size_t edgeIndex, DCEL *dcel) : edge_index(edgeIndex), dcel(dcel) {}
 
         bool operator==(const EdgeWrapper &other) const {
             return edge_index == other.edge_index;
@@ -143,13 +143,13 @@ public:
     private:
 
         size_t edge_index; // индекс ребра в vector vertexes которую оборачивает в этот wrapper
-        dcel *dcel;
+        DCEL *dcel;
     };
 
     class FaceWrapper {
-        friend dcel;
+        friend DCEL;
     public:
-        FaceWrapper(size_t faceIndex, dcel *dcel) : face_index(faceIndex), dcel(dcel) {}
+        FaceWrapper(size_t faceIndex, DCEL *dcel) : face_index(faceIndex), dcel(dcel) {}
 
         EdgeWrapper getEdge() const {
             face curFace = dcel->faces[face_index];
@@ -162,16 +162,16 @@ public:
 
     private:
         size_t face_index; // индекс грани в vector vertexes которую оборачивает в этот wrapper
-        dcel *dcel;
+        DCEL *dcel;
     };
 
-    dcel::EdgeWrapper flip_edge(EdgeWrapper p_i_p_j_edge); //достанем из враппера индекс сами, в ручную
+    DCEL::EdgeWrapper flip_edge(EdgeWrapper p_i_p_j_edge); //достанем из враппера индекс сами, в ручную
 
     void update_face_node_index(FaceWrapper face, size_t node_index); //т.к. везде работаем с копиями или ссылками непойми откуда, то сюда нужно будет передать wrapper, тут внутри мы можем посмтреть на какую face из
     //вектора faces он ссылается т.к. face_index - private и установить соответсвующей face такой nodeIndex
 
     VertexWrapper split_face(FaceWrapper faceWithPointOn, std::optional<EdgeWrapper> edgeWithPointOn,
-                             point_2 point); //возвращаем обёртку на вершину которой сплитанули, то ребро которые optional используется только тогда, когда мы попали на ребро!
+                             Point_2 point); //возвращаем обёртку на вершину которой сплитанули, то ребро которые optional используется только тогда, когда мы попали на ребро!
 
     std::vector<FaceWrapper> get_incident_faces(
             VertexWrapper v) const; //выдаёт все инцидентные грани для вершины после split_face нужно запускать для той же вершины для которой запускали split_face, т.е.
@@ -179,10 +179,10 @@ public:
 
     std::vector<EdgeWrapper> get_outgoing_edges(VertexWrapper v) const;
 
-    std::vector<dcel::FaceWrapper> init_dcel_with_big_inf_triangle(size_t coordsSize);
+    std::vector<DCEL::FaceWrapper> init_dcel_with_big_inf_triangle(size_t coordsSize);
 
-    std::vector<dcel::VertexWrapper> getVertexesInWrappers();
-    dto::TriangulationResult getTriangulationWithCorrectBoundary(const std::unordered_map<point_2, point_2>& boundary_vertexes_map);
+    std::vector<DCEL::VertexWrapper> getVertexesInWrappers();
+    DTO::TriangulationResult getTriangulationWithCorrectBoundary();
     //содержит мапу, где храняться все ребра образующие границу, т.к. ребра у нас направленные,
     //то содержит обход границы против часовой стрелки, ключом мапы выступает исток ребра, значением - сток
 };
