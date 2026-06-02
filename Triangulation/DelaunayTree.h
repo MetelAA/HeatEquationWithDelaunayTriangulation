@@ -11,7 +11,7 @@
 
 class DelaunayTree {
 public:
-    DelaunayTree() {} //пришлось создать инчае гемор, используется один раз и тут же перезабивается нормальным
+    DelaunayTree() {} //пришлось создать, инчае гемор, используется один раз и тут же перезабивается нормальным
 
     DelaunayTree(const std::vector<DCEL::FaceWrapper>& rootFaces, size_t points_count) {
         size_t log2n = static_cast<size_t>(std::ceil(std::log2(points_count)));
@@ -119,6 +119,7 @@ private:
                     return child_index;
                 }
             }
+            return std::nullopt;
         }
 
 

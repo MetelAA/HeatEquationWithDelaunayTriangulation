@@ -5,7 +5,6 @@
 #include <cstdio>
 #include "Point_2.h"
 #include <optional>
-#include <unordered_map>
 #include "../magic_constants.h"
 #include "../DTO.h"
 
@@ -22,9 +21,7 @@ private:
                                                                   random_edge_index(randomEdgeIndex)
         {}
 
-        size_t point_coords_index; // индекс координат точки(Pint_2) в vector coords, для p-1, p-2 тут будут два не валидных магических числа из констант!
-        //Почему не использовал optional тут, ну типо доп нагрузка в дата классе, где гораздо! чаще вершины с корректным индексом, плюс тут два магических значения разного значения, мы по разному обрабатываем
-        //верхнее и левое на бесконечностях, так что да, я бы вообще тут чисто всё enum-чиками орагнизовал, но увы(((
+        size_t point_coords_index; // индекс координат точки(Point_2) в vector coords, для p_inf тут будет не валидное число из магических констант!
         size_t random_edge_index; //индекс случайного (условно) ребра в vector edges которое исходит из этой вершины, через него можно найти все остальные
     };
 
@@ -88,7 +85,6 @@ public:
             return EdgeWrapper(curVertex.random_edge_index, dcel);
         }
 
-        //мб добавить возврат типа ребра, типо нормал, или те которые на бесконечности (по отдельному типу для каждого!)
         Point_2 getGeometry() const {
             vertex curVertex = dcel->vertexes[vertex_index];
             return dcel->coords[curVertex.point_coords_index];
@@ -167,7 +163,8 @@ public:
 
     DCEL::EdgeWrapper flip_edge(EdgeWrapper p_i_p_j_edge); //достанем из враппера индекс сами, в ручную
 
-    void update_face_node_index(FaceWrapper face, size_t node_index); //т.к. везде работаем с копиями или ссылками непойми откуда, то сюда нужно будет передать wrapper, тут внутри мы можем посмтреть на какую face из
+    void update_face_node_index(FaceWrapper face, size_t node_index);
+    //т.к. везде работаем с копиями или ссылками непойми откуда, то сюда нужно будет передать wrapper, тут внутри мы можем посмтреть на какую face из
     //вектора faces он ссылается т.к. face_index - private и установить соответсвующей face такой nodeIndex
 
     VertexWrapper split_face(FaceWrapper faceWithPointOn, std::optional<EdgeWrapper> edgeWithPointOn,

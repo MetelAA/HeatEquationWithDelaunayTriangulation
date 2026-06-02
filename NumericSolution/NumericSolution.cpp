@@ -14,7 +14,7 @@ NumericSolution::NumericSolution(int vertex_count, const DTO::PlateParams &plate
     boundaryVertexesCount = boundaryVertexesCount % 2 == 1 ? boundaryVertexesCount+1 : boundaryVertexesCount;
     int internalVertexesCount = vertex_count - boundaryVertexesCount;
 
-    this->points.reserve(vertex_count+1); //мало ли добили до чётности
+    this->points.reserve(vertex_count+3); //мало ли добили до чётности
 
     std::vector<FiniteElementMethodHeatEquation::BoundaryNode> boundaryNodes;
     {
@@ -29,7 +29,7 @@ NumericSolution::NumericSolution(int vertex_count, const DTO::PlateParams &plate
         double db = height / M;
 
         {
-            double sum = da+db; //нужна для приведения темперутры к среднему значение исходя из "близости" к двум грянм
+            double sum = da+db; //нужна для приведения температуры к среднему значение исходя из "близости" к двум граням
 
             double leftT = tInit.leftBoundaryT;
             double rightT = tInit.rightBoundaryT;
@@ -69,10 +69,10 @@ NumericSolution::NumericSolution(int vertex_count, const DTO::PlateParams &plate
         }
 
 
-        //теперь рандомно раскидаем точки, но сделаем отступ минимальный отступ от границ, пусть будет (da+db)/10 подгоночное значение
+        //теперь рандомно раскидаем точки, но сделаем отступ минимальный отступ от границ, пусть будет (da+db)/25, подгоночное значение
 
         double fromBoundaryMargin = (da+db) / 25;
-        if (width - fromBoundaryMargin <= 0 || height - fromBoundaryMargin <= 0) { //на всякий случай, убрать полсе тестов
+        if (width - fromBoundaryMargin <= 0 || height - fromBoundaryMargin <= 0) { //на всякий случай
             fromBoundaryMargin = 0;
         }
 
@@ -80,6 +80,7 @@ NumericSolution::NumericSolution(int vertex_count, const DTO::PlateParams &plate
         std::uniform_real_distribution<double> distX(fromBoundaryMargin, width - fromBoundaryMargin);
         std::uniform_real_distribution<double> distY(fromBoundaryMargin, height - fromBoundaryMargin);
 
+        //рандомно раскидываем точки на плоскости
         for (int i = 0; i < internalVertexesCount; ++i)
             points.emplace_back(distX(gen), distY(gen));
     }
@@ -92,17 +93,8 @@ NumericSolution::NumericSolution(int vertex_count, const DTO::PlateParams &plate
     points = rez.points;
     faces = rez.faces;
 
-    // std::cout << points.size() << "\n";
-    // std::cout << faces.size() << "\n";
-    // for(DTO::TriangleFace face : faces){
-    //     std::cout << "triangle: " << "v1: x |" << points[face.v1_index].getX() << "|, y |" << points[face.v1_index].getY() << "|; " << "v2: x |" << points[face.v2_index].getX() << "|, y |" << points[face.v2_index].getY() << "|; "
-    //     << "v3: x |" << points[face.v3_index].getX() << "|, y |" << points[face.v3_index].getY() << "|\n";
-    // }
-
 
     this->heatEquation = FiniteElementMethodHeatEquation(points, faces, boundaryNodes, tInit.plateT0, dt, thermalConductivityCoefficient);
-
-    //сам эксперимент
 
 }
 

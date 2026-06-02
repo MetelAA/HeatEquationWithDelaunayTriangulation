@@ -8,9 +8,12 @@
 class SolutionController {
 public:
     SolutionController(int vertex_count, const DTO::PlateParams& plateParams, double dt, double experimentTime) : plate_params(plateParams) {
+        auto t1 = std::chrono::steady_clock::now();
+
         NumericSolution numeric_solution(vertex_count, plateParams, dt);
         AnalyticalSolution analytical_solution(numeric_solution.getPoints(), numeric_solution.getFaces(), plateParams);
 
+        std::cout << "Init time: " << std::chrono::duration<double>(std::chrono::steady_clock::now() - t1).count() << "s\n";
 
         int timeForWrite = std::ceil(1 / Constants::writePerSecond);
         long stepsPerWrite = std::ceil(timeForWrite / dt);
@@ -35,8 +38,8 @@ public:
             avgQuadDiff.push_back(getRMSDifference(zeroFrame.points, zeroFrame.points));
         }
 
-
-        std::cout << "initialized successfully, start calc\n";
+        t1 = std::chrono::steady_clock::now();
+        std::cout << "all initialized successfully, start calc\n";
         while (numeric_solution.getCurrentTime() < experimentTime) {
             DTO::HeatEquationStepResult numStepResult = numeric_solution.step();
             if (steps % stepsPerWrite == 0) {
@@ -51,6 +54,8 @@ public:
             }
             steps++;
         }
+
+        std::cout << "Calculation time: " << std::chrono::duration<double>(std::chrono::steady_clock::now() - t1).count() << "s\n";
 
         double maxT = this->plate_params.tInit.plateT0, minT = this->plate_params.tInit.plateT0;
         {
@@ -71,7 +76,7 @@ public:
         DataWriter::writeTwoColumns(Constants::maxDiffPlotDataFile, writesTimes, maxDiff);
         DataWriter::writeTwoColumns(Constants::avgQuadDiffDataFile, writesTimes, avgQuadDiff);
 
-        //пишем полезные тепловые карты в бинарники, можно трайнуть вывести аналитику, но как будто всё ляжет
+        //пишем тепловые карты в бинарники
         cereal_f::writeToFile(allDataNumResult, Constants::numericResultFile);
         // cereal_f::writeToFile(allDataAnalyticalResult, "analytical_result.bin");
     }

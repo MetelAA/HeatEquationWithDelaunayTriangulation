@@ -118,19 +118,19 @@ DCEL::split_face(DCEL::FaceWrapper faceWithPointOn,
         }
 
         {
-            //изменим prev/next на акутальные для новых граней у старых ребер, изменим у e2
+            //изменим prev/next на актуальные для новых граней у старых ребер, изменим у e2
             e2.next_edge_index = e3_index;
             e2.prev_edge_index = e9_index;
         }
 
         {
-            //изменим prev/next на акутальные для новых граней у старых ребер, изменим у e5
+            //изменим prev/next на актуальные для новых граней у старых ребер, изменим у e5
             e5.next_edge_index = e12_index;
             e5.prev_edge_index = e7_index;
         }
 
         {
-            //изменим prev/next на акутальные для новых граней у старых ребер, изменим у e6
+            //изменим prev/next на актуальные для новых граней у старых ребер, изменим у e6
             e6.next_edge_index = e4_index;
             e6.prev_edge_index = e11_index;
         }
@@ -449,7 +449,7 @@ std::vector<DCEL::FaceWrapper> DCEL::init_dcel_with_big_inf_triangle(size_t coor
         e11.source_vertex_index = p_k_index;
     }
 
-    //забъём face-ами
+    //присвоим каждому ребру его face
     {
         e0.face_index = face3_index;
         e1.face_index = face3_index;
@@ -623,7 +623,7 @@ DCEL::EdgeWrapper DCEL::flip_edge(EdgeWrapper p_i_p_j_edge) {
     this->vertexes[p_j_index].random_edge_index = e1_index;
 
     return EdgeWrapper(p_i_p_j_edge.edge_index,
-                       this); //он типо даже так то не поменялся, но для корректности лучше вернуть новый
+                       this); //он типо даже так то не поменялся, но для корректности лучше вернуть новый (вроде как даже резонно)
 }
 
 
@@ -638,7 +638,7 @@ std::vector<DCEL::VertexWrapper> DCEL::getVertexesInWrappers() {
 
 DTO::TriangulationResult DCEL::getTriangulationWithCorrectBoundary() {
     std::vector<DTO::TriangleFace> triangles;
-    //кривота но ничего не поделаешь, в итоговом списке сдвигаем все элементы на 4 индекса, тк первые 4 элемента (1 бесконечный и 3 супер треугольника) будут удалены
+    //кривота но ничего не поделаешь, в итоговом списке сдвигаем все элементы на 3 индекса, тк первые 3 элемента (1 бесконечный (у бесконечного нет координаты) и 3 супер треугольника) будут удалены
 
     for (size_t i = 0; i < this->faces.size(); ++i) {
         DCEL::FaceWrapper face = {i, this};

@@ -36,7 +36,6 @@ add_executable(HeatEquationWithDelaunayTriangulation
         NumericSolution/NumericSolution.h
         AnalyticalSolution/AnalyticalEquation.cpp
         AnalyticalSolution/AnalyticalEquation.h
-        SolutionController.cpp
         SolutionController.h
         AnalyticalSolution/AnalyticalSolution.cpp
         AnalyticalSolution/AnalyticalSolution.h

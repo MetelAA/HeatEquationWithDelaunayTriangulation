@@ -51,11 +51,11 @@ FiniteElementMethodHeatEquation::FiniteElementMethodHeatEquation(const std::vect
 
 
             {
-                double m = s / 2.0 / 12.0; //multiplier
+                double multiplier = s / 2.0 / 12.0;
                 local_M = {
-                        {m * 2, m, m},
-                        {m, m * 2, m},
-                        {m, m,  m * 2}
+                        {multiplier * 2, multiplier, multiplier},
+                        {multiplier, multiplier * 2, multiplier},
+                        {multiplier, multiplier,  multiplier * 2}
                 };
             }
         }
@@ -148,7 +148,7 @@ void FiniteElementMethodHeatEquation::step() {
         b[boundaryNodeIndex] = this->nodes.getNode(boundaryNodeIndex).temp;
     }
 
-    //переходим к первому этапу разложения Холецкого Ly=b, ищем вектор y-ков, пользуемся что L - нижнетреугольная
+    //переходим к первому этапу разложения Холецкого Ly=b, ищем вектор y-ков, пользуемся что L - нижне треугольная
     std::vector<double> y(this->nodes.getNodesSize());
 
     for (int i = 0; i < this->nodes.getNodesSize(); ++i) {
@@ -159,7 +159,7 @@ void FiniteElementMethodHeatEquation::step() {
         y[i] = (b[i] - otherSum) / L[i][i];
     }
 
-    //вторая часть Холецкого L_t*x=y. Помним чо L_t - верхнетреугольная, работаем с L как с транспонированной
+    //вторая часть Холецкого L_t*x=y. Помним чо L_t - верхне треугольная, работаем с L как с транспонированной
     std::vector<double> x(this->nodes.getNodesSize());
 
     for (int i = this->nodes.getNodesSize() - 1; i >= 0; --i) {

@@ -4,7 +4,6 @@
 #include <stdexcept>
 #include <vector>
 
-#include "../magic_constants.h"
 
 namespace DataWriter {
     static void writeTwoColumns(const std::string fileName, const std::vector<double>& times, const std::vector<double>& temperatures) {
